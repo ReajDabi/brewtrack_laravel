@@ -9,13 +9,13 @@ use Illuminate\Http\Request;
 
 class InventoryController extends Controller
 {
-    // Show the inventory list (GET /admin/inventory)
+    // Show inventory list
     public function index(Request $request)
     {
-        // Start building the query
+        // Start the query
         $query = Inventory::where('is_active', true);
 
-        // If user typed in the search box, filter by name or code
+        // If user typed in search box, filter results
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -24,28 +24,27 @@ class InventoryController extends Controller
             });
         }
 
-        // Get total count BEFORE pagination (for the stat cards)
+        // Stat card counts
         $totalItems    = Inventory::where('is_active', true)->count();
         $lowStockCount = Inventory::where('is_active', true)
             ->whereColumn('quantity_in_stock', '<=', 'reorder_level')
             ->count();
 
-        // Get paginated results (20 per page)
+        // Get paginated results — 20 per page
         $items = $query->orderBy('item_name')->paginate(20)->withQueryString();
 
         return view('admin.inventory.index', compact('items', 'totalItems', 'lowStockCount'));
     }
 
-    // Show the "Add Item" form (GET /admin/inventory/create)
+    // Show the Add Item form
     public function create()
     {
         return view('admin.inventory.create');
     }
 
-    // Save a new item (POST /admin/inventory)
+    // Save new item to database
     public function store(Request $request)
     {
-        // Validate all the form fields before saving
         $validated = $request->validate([
             'item_name'         => 'required|string|max:100',
             'item_code'         => 'nullable|string|max:50|unique:inventory',
@@ -60,18 +59,17 @@ class InventoryController extends Controller
 
         Inventory::create($validated);
 
-        // Redirect back with a success message
         return redirect()->route('admin.inventory.index')
-            ->with('success', 'Inventory item added successfully!');
+            ->with('success', 'Item added successfully!');
     }
 
-    // Show the edit form (GET /admin/inventory/{id}/edit)
+    // Show the Edit form
     public function edit(Inventory $inventory)
     {
         return view('admin.inventory.edit', compact('inventory'));
     }
 
-    // Save changes to an item (PUT /admin/inventory/{id})
+    // Save edited item
     public function update(Request $request, Inventory $inventory)
     {
         $validated = $request->validate([
@@ -91,7 +89,7 @@ class InventoryController extends Controller
             ->with('success', 'Item updated successfully!');
     }
 
-    // Soft-delete (deactivate) an item (DELETE /admin/inventory/{id})
+    // Soft delete — just marks as inactive
     public function destroy(Inventory $inventory)
     {
         $inventory->update(['is_active' => false]);
@@ -100,7 +98,7 @@ class InventoryController extends Controller
             ->with('success', 'Item removed from inventory.');
     }
 
-    // Adjust stock levels (POST /admin/inventory/{id}/adjust)
+    // Adjust stock levels (add/remove/set)
     public function adjust(Request $request, Inventory $inventory)
     {
         $validated = $request->validate([
@@ -111,17 +109,17 @@ class InventoryController extends Controller
 
         $previousStock = $inventory->quantity_in_stock;
 
-        // Calculate new stock based on transaction type
+        // Calculate the new stock level
         $newStock = match($validated['transaction_type']) {
-            'in'         => $previousStock + $validated['quantity'],
-            'out','waste'=> max(0, $previousStock - $validated['quantity']),
-            'adjustment' => $validated['quantity'],
+            'in'              => $previousStock + $validated['quantity'],
+            'out', 'waste'    => max(0, $previousStock - $validated['quantity']),
+            'adjustment'      => $validated['quantity'],
         };
 
-        // Update the stock level
+        // Save new stock level
         $inventory->update(['quantity_in_stock' => $newStock]);
 
-        // Record this transaction in the history log
+        // Also save a transaction record for history
         InventoryTransaction::create([
             'inventory_id'     => $inventory->id,
             'transaction_type' => $validated['transaction_type'],

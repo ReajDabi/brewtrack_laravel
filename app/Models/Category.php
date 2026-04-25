@@ -3,16 +3,21 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
 {
-    protected $fillable = ['name', 'description', 'display_order', 'is_active'];
+    protected $fillable = [
+        'name',
+        'description',
+        'display_order',
+        'is_active',
+    ];
 
-    protected $casts = ['is_active' => 'boolean'];
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
 
-    // One category has many menu items
-    public function menuItems(): HasMany
+    public function menuItems()
     {
         return $this->hasMany(MenuItem::class);
     }

@@ -6,13 +6,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class Inventory extends Model
 {
-    // Important: tell Laravel the table name since it doesn't follow plural convention
     protected $table = 'inventory';
 
     protected $fillable = [
-        'item_name', 'item_code', 'description', 'unit_of_measure',
-        'quantity_in_stock', 'reorder_level', 'critical_level',
-        'unit_cost', 'supplier_info', 'is_active',
+        'item_name',
+        'item_code',
+        'description',
+        'unit_of_measure',
+        'quantity_in_stock',
+        'reorder_level',
+        'critical_level',
+        'unit_cost',
+        'supplier_info',
+        'is_active',
     ];
 
     protected $casts = [
@@ -21,19 +27,17 @@ class Inventory extends Model
         'is_active'         => 'boolean',
     ];
 
-    // Helper: is this item at or below the critical threshold?
     public function isCriticalStock(): bool
     {
         return $this->quantity_in_stock <= $this->critical_level;
     }
 
-    // Helper: is this item at or below the reorder threshold?
     public function isLowStock(): bool
     {
         return $this->quantity_in_stock <= $this->reorder_level;
     }
 
-    // Returns 'critical', 'low', or 'ok' — used to show colored badges in UI
+    // Returns 'critical', 'low', or 'ok'
     public function getStockStatusAttribute(): string
     {
         if ($this->isCriticalStock()) return 'critical';

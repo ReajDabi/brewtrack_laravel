@@ -29,7 +29,7 @@ class User extends Authenticatable
         'last_login' => 'datetime',
     ];
 
-    // Use 'username' for login instead of 'email'
+    // Use username instead of email for login
     public function getAuthIdentifierName(): string
     {
         return 'username';
@@ -38,10 +38,5 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
-    }
-
-    public function orders()
-    {
-        return $this->hasMany(Order::class, 'cashier_id');
     }
 }

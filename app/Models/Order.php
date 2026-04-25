@@ -3,16 +3,23 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
     protected $fillable = [
-        'order_number', 'cashier_id', 'customer_name',
-        'subtotal', 'tax_amount', 'discount_amount', 'total_amount',
-        'payment_method', 'amount_tendered', 'change_amount',
-        'status', 'kitchen_queue_printed', 'notes',
+        'order_number',
+        'cashier_id',
+        'customer_name',
+        'subtotal',
+        'tax_amount',
+        'discount_amount',
+        'total_amount',
+        'payment_method',
+        'amount_tendered',
+        'change_amount',
+        'status',
+        'kitchen_queue_printed',
+        'notes',
     ];
 
     protected $casts = [
@@ -20,19 +27,19 @@ class Order extends Model
         'kitchen_queue_printed' => 'boolean',
     ];
 
-    // The cashier who made this order
-    public function cashier(): BelongsTo
+    // The cashier who processed this order
+    public function cashier()
     {
         return $this->belongsTo(User::class, 'cashier_id');
     }
 
-    // All the line items in this order
-    public function items(): HasMany
+    // All items inside this order
+    public function items()
     {
         return $this->hasMany(OrderItem::class);
     }
 
-    // Auto-generate order number like "ORD-20260421-0001"
+    // Generate order number like ORD-20260425-0001
     public static function generateOrderNumber(): string
     {
         $prefix = 'ORD-' . now()->format('Ymd') . '-';
