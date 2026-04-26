@@ -6,6 +6,10 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\MenuController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\SettingsController;
 
 // Root redirect
 Route::get('/', function () {
@@ -52,18 +56,28 @@ Route::prefix('admin')
 
         // Menu Items
         Route::resource('menu', MenuController::class);
-        Route::patch('menu/{menu}/toggle',     [MenuController::class, 'toggleAvailability'])
+        Route::patch('menu/{menu}/toggle', [MenuController::class, 'toggleAvailability'])
             ->name('menu.toggle');
 
-        // Placeholders
-        Route::get('/categories', function () { return 'Categories coming soon'; })
-            ->name('categories.index');
-        Route::get('/users',      function () { return 'Users coming soon'; })
-            ->name('users.index');
-        Route::get('/reports',    function () { return 'Reports coming soon'; })
+        // Categories
+        Route::resource('categories', CategoryController::class);
+
+        // Users
+        Route::resource('users', UserController::class);
+        Route::patch('users/{user}/toggle', [UserController::class, 'toggleActive'])
+            ->name('users.toggle');
+
+        // Reports
+        Route::get('/reports',        [ReportController::class, 'index'])
             ->name('reports.index');
-        Route::get('/settings',   function () { return 'Settings coming soon'; })
+        Route::get('/reports/export', [ReportController::class, 'export'])
+            ->name('reports.export');
+
+        // Settings
+        Route::get('/settings',  [SettingsController::class, 'index'])
             ->name('settings.index');
+        Route::put('/settings',  [SettingsController::class, 'update'])
+            ->name('settings.update');
     });
 
 // Cashier placeholder
