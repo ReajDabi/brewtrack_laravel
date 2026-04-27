@@ -1,255 +1,455 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Receipt — {{ $order->order_number }}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: #f5f0e8;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .receipt {
-            background: white;
-            width: 320px;
-            border-radius: 12px;
-            padding: 28px 24px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.1);
-        }
-        .receipt-header { text-align: center; margin-bottom: 16px; }
-        .receipt-header h1 { font-size: 20px; color: #6F4E37; font-weight: 700; }
-        .receipt-header p  { font-size: 12px; color: #6b7280; margin-top: 2px; }
-        .divider { border: none; border-top: 1px dashed #d1d5db; margin: 14px 0; }
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            margin-bottom: 5px;
-            color: #374151;
-        }
-        .info-row span:last-child { font-weight: 500; }
-        .items-table { width: 100%; font-size: 12px; margin-top: 8px; }
-        .items-table th {
-            text-align: left;
-            padding: 5px 0;
-            border-bottom: 1px solid #e5e7eb;
-            color: #6b7280;
-            font-weight: 500;
-        }
-        .items-table td {
-            padding: 6px 0;
-            border-bottom: 1px solid #f3f4f6;
-            vertical-align: top;
-        }
-        .items-table .text-right { text-align: right; }
-        .totals-section { margin-top: 12px; font-size: 13px; }
-        .total-line {
-            display: flex;
-            justify-content: space-between;
-            padding: 3px 0;
-            color: #374151;
-        }
-        .total-line.grand {
-            font-size: 16px;
-            font-weight: 700;
-            color: #1a1a2e;
-            border-top: 2px solid #1a1a2e;
-            margin-top: 6px;
-            padding-top: 8px;
-        }
-        .total-line.change { color: #10b981; font-weight: 600; }
-        .receipt-footer {
-            text-align: center;
-            font-size: 12px;
-            color: #6b7280;
-            margin-top: 18px;
-            font-style: italic;
-        }
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        .btn-print {
-            flex: 1; padding: 10px;
-            background: #6F4E37; color: white;
-            border: none; border-radius: 8px;
-            font-size: 13px; font-weight: 500;
-            font-family: 'Poppins', sans-serif;
-            cursor: pointer;
-        }
-        .btn-new {
-            flex: 1; padding: 10px;
-            background: #e5e7eb; color: #374151;
-            border: none; border-radius: 8px;
-            font-size: 13px; font-weight: 500;
-            font-family: 'Poppins', sans-serif;
-            cursor: pointer;
-            text-decoration: none;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
+@extends('layouts.app')
 
-        /* Hide buttons when printing */
-        @media print {
-            body { background: white; padding: 0; }
-            .receipt { box-shadow: none; }
-            .action-buttons { display: none; }
-        }
-    </style>
-</head>
-<body>
-    <div class="receipt">
+@section('title', 'Point of Sale')
 
-        {{-- Shop header --}}
-        <div class="receipt-header">
-            <h1>
-                <i class="fas fa-coffee"></i>
-                {{ $settings->get('shop_name', 'BrewTrack') }}
-            </h1>
-            @if($settings->get('shop_address'))
-                <p>{{ $settings->get('shop_address') }}</p>
-            @endif
-            @if($settings->get('shop_contact'))
-                <p>{{ $settings->get('shop_contact') }}</p>
-            @endif
-            @if($settings->get('receipt_header'))
-                <p style="margin-top:6px; font-style:italic;">
-                    {{ $settings->get('receipt_header') }}
-                </p>
-            @endif
-        </div>
+@section('content')
 
-        <hr class="divider">
+@push('styles')
+<style>
+    .pos-layout {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 16px;
+        height: calc(100vh - 90px);
+    }
+    .menu-panel {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+    .category-tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+    .cat-btn {
+        padding: 7px 16px;
+        border-radius: 20px;
+        border: 2px solid #e5e7eb;
+        background: white;
+        color: #6b7280;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        font-family: 'Poppins', sans-serif;
+        transition: all 0.2s;
+    }
+    .cat-btn:hover  { border-color: #6F4E37; color: #6F4E37; }
+    .cat-btn.active { border-color: #6F4E37; background: #6F4E37; color: white; }
+    .menu-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 12px;
+        flex: 1;
+    }
+    .menu-item-card {
+        border: 2px solid #f3f4f6;
+        border-radius: 10px;
+        padding: 14px 10px;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.2s;
+        background: white;
+    }
+    .menu-item-card:hover {
+        border-color: #6F4E37;
+        box-shadow: 0 4px 12px rgba(111,78,55,0.15);
+        transform: translateY(-2px);
+    }
+    .menu-item-name  { font-size: 13px; font-weight: 600; color: #1a1a2e; margin-bottom: 4px; }
+    .menu-item-price { font-size: 14px; font-weight: 700; color: #6F4E37; }
+    .menu-item-cat   { font-size: 11px; color: #9ca3af; margin-top: 3px; }
+    .cart-panel {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .cart-header {
+        font-size: 15px;
+        font-weight: 700;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #1a1a2e;
+    }
+    .cart-header i { color: #6F4E37; }
+    .cart-items {
+        flex: 1;
+        overflow-y: auto;
+        min-height: 0;
+        margin-bottom: 12px;
+    }
+    .cart-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .cart-item-name  { flex: 1; font-size: 13px; font-weight: 500; }
+    .cart-item-total {
+        font-size: 13px; font-weight: 700;
+        color: #6F4E37; min-width: 70px; text-align: right;
+    }
+    .qty-wrap { display: flex; align-items: center; gap: 6px; }
+    .qty-btn {
+        width: 24px; height: 24px;
+        border-radius: 6px; border: none;
+        background: #f3f4f6; color: #374151;
+        font-size: 14px; font-weight: 700;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: background 0.2s;
+    }
+    .qty-btn:hover { background: #6F4E37; color: white; }
+    .qty-num { font-size: 13px; font-weight: 600; min-width: 20px; text-align: center; }
+    .remove-btn {
+        background: none; border: none;
+        color: #ef4444; cursor: pointer;
+        font-size: 13px; padding: 2px 4px;
+    }
+    .cart-empty { text-align: center; padding: 40px 0; color: #9ca3af; }
+    .cart-empty i { font-size: 36px; display: block; margin-bottom: 10px; }
+    .cart-totals { border-top: 2px solid #f3f4f6; padding-top: 12px; font-size: 13px; }
+    .total-row {
+        display: flex; justify-content: space-between;
+        padding: 3px 0; color: #6b7280;
+    }
+    .total-row.grand {
+        font-size: 16px; font-weight: 700; color: #1a1a2e;
+        margin-top: 6px; padding-top: 8px; border-top: 2px solid #1a1a2e;
+    }
+    .checkout-form { margin-top: 12px; }
+    .checkout-row  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .pos-input {
+        width: 100%; padding: 9px 12px;
+        border: 2px solid #e5e7eb; border-radius: 8px;
+        font-size: 13px; font-family: 'Poppins', sans-serif;
+        margin-bottom: 8px;
+    }
+    .pos-input:focus { outline: none; border-color: #6F4E37; }
+    .change-box {
+        padding: 8px 12px; border-radius: 8px;
+        font-size: 13px; font-weight: 600;
+        text-align: center; margin-bottom: 8px; display: none;
+    }
+    .change-ok  { background: #d1fae5; color: #065f46; }
+    .change-bad { background: #fee2e2; color: #991b1b; }
+    .btn-checkout {
+        width: 100%; padding: 13px;
+        background: #6F4E37; color: white;
+        border: none; border-radius: 10px;
+        font-size: 15px; font-weight: 600;
+        font-family: 'Poppins', sans-serif;
+        cursor: pointer; transition: all 0.2s;
+        display: flex; align-items: center;
+        justify-content: center; gap: 8px;
+        margin-bottom: 6px;
+    }
+    .btn-checkout:hover    { background: #5a3d2b; }
+    .btn-checkout:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-clear-cart {
+        width: 100%; padding: 9px;
+        background: #fee2e2; color: #991b1b;
+        border: none; border-radius: 8px;
+        font-size: 13px; font-weight: 500;
+        font-family: 'Poppins', sans-serif; cursor: pointer;
+    }
+</style>
+@endpush
 
-        {{-- Order info --}}
-        <div class="info-row">
-            <span>Order #</span>
-            <span>{{ $order->order_number }}</span>
-        </div>
-        <div class="info-row">
-            <span>Date</span>
-            <span>{{ $order->created_at->format('M d, Y') }}</span>
-        </div>
-        <div class="info-row">
-            <span>Time</span>
-            <span>{{ $order->created_at->format('h:i A') }}</span>
-        </div>
-        <div class="info-row">
-            <span>Cashier</span>
-            <span>{{ $order->cashier->full_name ?? '—' }}</span>
-        </div>
-        @if($order->customer_name)
-            <div class="info-row">
-                <span>Customer</span>
-                <span>{{ $order->customer_name }}</span>
-            </div>
-        @endif
+<div class="pos-layout">
 
-        <hr class="divider">
-
-        {{-- Items --}}
-        <table class="items-table">
-            <thead>
-                <tr>
-                    <th>Item</th>
-                    <th class="text-right">Qty</th>
-                    <th class="text-right">Price</th>
-                    <th class="text-right">Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($order->items as $item)
-                    <tr>
-                        <td>
-                            {{ $item->menuItem->name ?? 'Item' }}
-                            @if($item->customization)
-                                <br>
-                                <span style="font-size:10px; color:#9ca3af;">
-                                    {{ $item->customization }}
-                                </span>
-                            @endif
-                        </td>
-                        <td class="text-right">{{ $item->quantity }}</td>
-                        <td class="text-right">
-                            &#8369;{{ number_format($item->unit_price, 2) }}
-                        </td>
-                        <td class="text-right">
-                            &#8369;{{ number_format($item->total_price, 2) }}
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-
-        <hr class="divider">
-
-        {{-- Totals --}}
-        <div class="totals-section">
-            <div class="total-line">
-                <span>Subtotal</span>
-                <span>&#8369;{{ number_format($order->subtotal, 2) }}</span>
-            </div>
-            @if($order->discount_amount > 0)
-                <div class="total-line">
-                    <span>Discount</span>
-                    <span style="color:#ef4444;">
-                        -&#8369;{{ number_format($order->discount_amount, 2) }}
-                    </span>
-                </div>
-            @endif
-            <div class="total-line">
-                <span>VAT (12%)</span>
-                <span>&#8369;{{ number_format($order->tax_amount, 2) }}</span>
-            </div>
-            <div class="total-line grand">
-                <span>TOTAL</span>
-                <span>&#8369;{{ number_format($order->total_amount, 2) }}</span>
-            </div>
-            @if($order->amount_tendered)
-                <div class="total-line" style="margin-top:8px;">
-                    <span>Cash</span>
-                    <span>&#8369;{{ number_format($order->amount_tendered, 2) }}</span>
-                </div>
-                <div class="total-line change">
-                    <span>Change</span>
-                    <span>&#8369;{{ number_format($order->change_amount, 2) }}</span>
-                </div>
-            @endif
-            <div class="total-line" style="margin-top:6px; color:#6b7280;">
-                <span>Payment</span>
-                <span style="text-transform:uppercase; font-weight:600;">
-                    {{ $order->payment_method }}
-                </span>
-            </div>
-        </div>
-
-        {{-- Footer --}}
-        <div class="receipt-footer">
-            {{ $settings->get('receipt_footer', 'Thank you! Please come again.') }}
-        </div>
-
-        {{-- Action buttons --}}
-        <div class="action-buttons">
-            <button class="btn-print" onclick="window.print()">
-                <i class="fas fa-print"></i> Print
+    {{-- LEFT: Menu panel --}}
+    <div class="menu-panel">
+        <div class="category-tabs">
+            <button class="cat-btn active" onclick="filterCategory('all', this)">
+                All
             </button>
-            <a href="{{ route('cashier.pos') }}" class="btn-new">
-                <i class="fas fa-plus"></i> New Order
-            </a>
+            @foreach($categories as $cat)
+                <button class="cat-btn"
+                        onclick="filterCategory({{ $cat->id }}, this)">
+                    {{ $cat->name }}
+                </button>
+            @endforeach
         </div>
 
+        <div class="menu-grid">
+            @foreach($categories as $cat)
+                @foreach($cat->menuItems as $item)
+                    <div class="menu-item-card"
+                         data-category="{{ $cat->id }}"
+                         onclick="addToCart(
+                             {{ $item->id }},
+                             '{{ addslashes($item->name) }}',
+                             {{ $item->price }}
+                         )">
+                        <div class="menu-item-name">{{ $item->name }}</div>
+                        <div class="menu-item-price">
+                            &#8369;{{ number_format($item->price, 2) }}
+                        </div>
+                        <div class="menu-item-cat">{{ $cat->name }}</div>
+                    </div>
+                @endforeach
+            @endforeach
+        </div>
     </div>
-</body>
-</html>
+
+    {{-- RIGHT: Cart panel --}}
+    <div class="cart-panel">
+        <div class="cart-header">
+            <i class="fas fa-shopping-cart"></i> Current Order
+        </div>
+
+        <div class="cart-items" id="cartItems">
+            <div class="cart-empty" id="cartEmpty">
+                <i class="fas fa-coffee"></i>
+                Add items to start an order
+            </div>
+        </div>
+
+        <div class="cart-totals">
+            <div class="total-row">
+                <span>Subtotal</span><span id="subtotal">&#8369;0.00</span>
+            </div>
+            <div class="total-row">
+                <span>Discount</span><span id="discountDisplay">&#8369;0.00</span>
+            </div>
+            <div class="total-row">
+                <span>Tax (12%)</span><span id="taxAmount">&#8369;0.00</span>
+            </div>
+            <div class="total-row grand">
+                <span>TOTAL</span><span id="grandTotal">&#8369;0.00</span>
+            </div>
+        </div>
+
+        <div class="checkout-form">
+            <input type="text" id="customerName" class="pos-input"
+                   placeholder="Customer name (optional)">
+
+            <div class="checkout-row">
+                <select id="paymentMethod" class="pos-input"
+                        onchange="updateChange()">
+                    <option value="cash">Cash</option>
+                    <option value="gcash">GCash</option>
+                    <option value="maya">Maya</option>
+                    <option value="card">Card</option>
+                </select>
+                <input type="number" id="discountInput" class="pos-input"
+                       placeholder="Discount ₱" min="0" value="0"
+                       oninput="recalculate()">
+            </div>
+
+            <div id="tenderWrap">
+                <input type="number" id="amountTendered" class="pos-input"
+                       placeholder="Amount tendered ₱"
+                       min="0" oninput="updateChange()">
+            </div>
+
+            <div class="change-box" id="changeBox"></div>
+
+            <button class="btn-checkout" id="checkoutBtn"
+                    onclick="placeOrder()" disabled>
+                <i class="fas fa-check-circle"></i> Place Order
+            </button>
+
+            <button class="btn-clear-cart" onclick="clearCart()">
+                <i class="fas fa-trash"></i> Clear Cart
+            </button>
+        </div>
+    </div>
+</div>
+
+@endsection
+
+@push('scripts')
+<script>
+const TAX_RATE = 0.12;
+let cart = {};
+
+function filterCategory(catId, btn) {
+    document.querySelectorAll('.cat-btn').forEach(function(b) {
+        b.classList.remove('active');
+    });
+    btn.classList.add('active');
+    document.querySelectorAll('.menu-item-card').forEach(function(card) {
+        card.style.display = (catId === 'all' || card.dataset.category == catId) ? '' : 'none';
+    });
+}
+
+function addToCart(id, name, price) {
+    if (cart[id]) {
+        cart[id].qty++;
+    } else {
+        cart[id] = { id: id, name: name, price: price, qty: 1 };
+    }
+    renderCart();
+}
+
+function changeQty(id, delta) {
+    if (!cart[id]) return;
+    cart[id].qty += delta;
+    if (cart[id].qty <= 0) delete cart[id];
+    renderCart();
+}
+
+function removeItem(id) {
+    delete cart[id];
+    renderCart();
+}
+
+function clearCart() {
+    cart = {};
+    renderCart();
+}
+
+function renderCart() {
+    const container = document.getElementById('cartItems');
+    const empty     = document.getElementById('cartEmpty');
+    const keys      = Object.keys(cart);
+
+    if (keys.length === 0) {
+        container.innerHTML = '';
+        container.appendChild(empty);
+        document.getElementById('checkoutBtn').disabled = true;
+        recalculate();
+        return;
+    }
+
+    var html = '';
+    keys.forEach(function(id) {
+        var item  = cart[id];
+        var total = (item.price * item.qty).toFixed(2);
+        html += '<div class="cart-item">'
+              +   '<div class="cart-item-name">' + item.name + '</div>'
+              +   '<div class="qty-wrap">'
+              +     '<button class="qty-btn" onclick="changeQty(' + id + ',-1)">&#8722;</button>'
+              +     '<span class="qty-num">' + item.qty + '</span>'
+              +     '<button class="qty-btn" onclick="changeQty(' + id + ',1)">+</button>'
+              +   '</div>'
+              +   '<div class="cart-item-total">&#8369;' + total + '</div>'
+              +   '<button class="remove-btn" onclick="removeItem(' + id + ')">'
+              +     '<i class="fas fa-times"></i>'
+              +   '</button>'
+              + '</div>';
+    });
+
+    container.innerHTML = html;
+    document.getElementById('checkoutBtn').disabled = false;
+    recalculate();
+}
+
+function recalculate() {
+    var subtotal = 0;
+    Object.values(cart).forEach(function(item) {
+        subtotal += item.price * item.qty;
+    });
+
+    var discount = parseFloat(document.getElementById('discountInput').value) || 0;
+    var taxable  = subtotal - discount;
+    var tax      = taxable > 0 ? taxable * TAX_RATE : 0;
+    var total    = taxable > 0 ? taxable + tax : 0;
+
+    document.getElementById('subtotal').innerHTML       = '&#8369;' + subtotal.toFixed(2);
+    document.getElementById('discountDisplay').innerHTML = '&#8369;' + discount.toFixed(2);
+    document.getElementById('taxAmount').innerHTML      = '&#8369;' + tax.toFixed(2);
+    document.getElementById('grandTotal').innerHTML     = '&#8369;' + total.toFixed(2);
+
+    updateChange();
+}
+
+function updateChange() {
+    var method    = document.getElementById('paymentMethod').value;
+    var changeBox = document.getElementById('changeBox');
+    var tenderWrap= document.getElementById('tenderWrap');
+
+    tenderWrap.style.display = method === 'cash' ? '' : 'none';
+
+    if (method !== 'cash') {
+        changeBox.style.display = 'none';
+        return;
+    }
+
+    var totalText = document.getElementById('grandTotal').innerHTML;
+    var total     = parseFloat(totalText.replace('&#8369;','').replace(/,/g,'')) || 0;
+    var tendered  = parseFloat(document.getElementById('amountTendered').value) || 0;
+
+    if (tendered <= 0) {
+        changeBox.style.display = 'none';
+        return;
+    }
+
+    var change = tendered - total;
+    changeBox.style.display = 'block';
+
+    if (change >= 0) {
+        changeBox.className   = 'change-box change-ok';
+        changeBox.textContent = 'Change: &#8369;' + change.toFixed(2);
+        changeBox.innerHTML   = 'Change: &#8369;' + change.toFixed(2);
+    } else {
+        changeBox.className   = 'change-box change-bad';
+        changeBox.innerHTML   = '&#9888; Short by &#8369;' + Math.abs(change).toFixed(2);
+    }
+}
+
+async function placeOrder() {
+    var keys = Object.keys(cart);
+    if (keys.length === 0) return;
+
+    var btn = document.getElementById('checkoutBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+    var items = keys.map(function(id) {
+        return {
+            menu_item_id:  parseInt(id),
+            quantity:      cart[id].qty,
+            customization: '',
+        };
+    });
+
+    var payload = {
+        customer_name:   document.getElementById('customerName').value,
+        payment_method:  document.getElementById('paymentMethod').value,
+        amount_tendered: document.getElementById('amountTendered').value || null,
+        discount_amount: document.getElementById('discountInput').value  || 0,
+        items:           items,
+    };
+
+    try {
+        var response = await fetch('{{ route("cashier.orders.store") }}', {
+            method:  'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: JSON.stringify(payload),
+        });
+
+        var data = await response.json();
+
+        if (data.success) {
+            window.location.href = data.receipt_url;
+        } else {
+            alert('Error placing order. Please try again.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Place Order';
+        }
+    } catch (error) {
+        alert('Network error. Please try again.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check-circle"></i> Place Order';
+    }
+}
+</script>
+@endpush
