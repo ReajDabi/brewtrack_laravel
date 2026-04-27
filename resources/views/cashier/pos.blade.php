@@ -274,7 +274,7 @@
 
 @push('scripts')
 <script>
-const TAX_RATE = 0;
+const TAX_RATE = 0.12;
 let cart = {};
 
 function filterCategory(catId, btn) {
@@ -360,56 +360,25 @@ function renderCart() {
     recalculate();
 }
 
-/*function recalculate() {
-    var subtotal = 0;
-    Object.values(cart).forEach(function(item) {
-        subtotal += item.price * item.qty;
-    });
-    
-    var discount = parseFloat(document.getElementById('discountInput').value) || 0;
-    var taxable  = subtotal - discount; d pasure kung iadd nako ni
-    var tax      = taxable > 0 ? taxable * TAX_RATE : 0;
-    var total    = taxable > 0 ? taxable + tax : 0;
-
-//kani sa for the meantime
-    var total = subtotal - discount;
-    if (total < 0) total = 0;
-
-    var tax = 0; // force zero
-
-    document.getElementById('subtotal').innerHTML       = '&#8369;' + subtotal.toFixed(2);
-    document.getElementById('discountDisplay').innerHTML = '&#8369;' + discount.toFixed(2);
-    //document.getElementById('taxAmount').innerHTML      = '&#8369;' + tax.toFixed(2);
-    document.getElementById('grandTotal').innerHTML     = '&#8369;' + total.toFixed(2);
-    document.getElementById('taxAmount').parentElement.style.display = 'none';
-    updateChange();
-}*/
-
 function recalculate() {
     var subtotal = 0;
-
     Object.values(cart).forEach(function(item) {
         subtotal += Number(item.price) * Number(item.qty);
     });
-
-    var discountInput = document.getElementById('discountInput').value;
-    var discount = parseFloat(discountInput);
-
-    if (isNaN(discount) || discount < 0) {
-        discount = 0;
-    }
+    
+    var discount = parseFloat(document.getElementById('discountInput').value) || 0;
+    var taxable  = subtotal - discount;
+    var tax      = taxable > 0 ? taxable * TAX_RATE : 0;
+    var total    = taxable > 0 ? taxable + tax : 0;
 
     var total = subtotal - discount;
     if (total < 0) total = 0;
 
-    var tax = 0; 
-
-    // FORCE UI UPDATE
-    document.getElementById('subtotal').innerHTML        = '&#8369;' + subtotal.toFixed(2);
+    document.getElementById('subtotal').innerHTML       = '&#8369;' + subtotal.toFixed(2);
     document.getElementById('discountDisplay').innerHTML = '&#8369;' + discount.toFixed(2);
-    document.getElementById('taxAmount').innerHTML       = '&#8369;0.00';
-    document.getElementById('grandTotal').innerHTML      = '&#8369;' + total.toFixed(2);
-
+    document.getElementById('taxAmount').innerHTML      = '&#8369;' + tax.toFixed(2);
+    document.getElementById('grandTotal').innerHTML     = '&#8369;' + total.toFixed(2);
+  
     updateChange();
 }
 
