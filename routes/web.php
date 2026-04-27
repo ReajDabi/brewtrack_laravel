@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Cashier\PosController;
+use App\Http\Controllers\Cashier\OrderController as CashierOrderController;
 
 // Root redirect
 Route::get('/', function () {
@@ -37,16 +39,13 @@ Route::prefix('admin')
     ->middleware(['auth', 'role:admin'])
     ->group(function () {
 
-        // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index'])
             ->name('dashboard');
 
-        // Inventory
         Route::resource('inventory', InventoryController::class);
         Route::post('inventory/{inventory}/adjust', [InventoryController::class, 'adjust'])
             ->name('inventory.adjust');
 
-        // Orders
         Route::get('/orders',                  [OrderController::class, 'index'])
             ->name('orders.index');
         Route::get('/orders/{order}',          [OrderController::class, 'show'])
@@ -54,42 +53,46 @@ Route::prefix('admin')
         Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])
             ->name('orders.status');
 
-        // Menu Items
         Route::resource('menu', MenuController::class);
         Route::patch('menu/{menu}/toggle', [MenuController::class, 'toggleAvailability'])
             ->name('menu.toggle');
 
-        // Categories
         Route::resource('categories', CategoryController::class);
 
-        // Users
         Route::resource('users', UserController::class);
         Route::patch('users/{user}/toggle', [UserController::class, 'toggleActive'])
             ->name('users.toggle');
 
-        // Reports
         Route::get('/reports',        [ReportController::class, 'index'])
             ->name('reports.index');
         Route::get('/reports/export', [ReportController::class, 'export'])
             ->name('reports.export');
 
-        // Settings
-        Route::get('/settings',  [SettingsController::class, 'index'])
+        Route::get('/settings', [SettingsController::class, 'index'])
             ->name('settings.index');
-        Route::put('/settings',  [SettingsController::class, 'update'])
+        Route::put('/settings', [SettingsController::class, 'update'])
             ->name('settings.update');
     });
 
-// Cashier placeholder
+// Cashier routes
 Route::prefix('cashier')
     ->name('cashier.')
     ->middleware(['auth', 'role:cashier,admin'])
     ->group(function () {
-        Route::get('/pos', function () {
-            return 'POS coming soon';
-        })->name('pos');
 
-        Route::get('/orders/history', function () {
-            return 'History coming soon';
-        })->name('orders.history');
+        // POS screen
+        Route::get('/pos', [PosController::class, 'index'])
+            ->name('pos');
+
+        // Place order (called by JavaScript)
+        Route::post('/orders', [CashierOrderController::class, 'store'])
+            ->name('orders.store');
+
+        // Receipt page
+        Route::get('/orders/{order}/receipt', [CashierOrderController::class, 'receipt'])
+            ->name('orders.receipt');
+
+        // Order history
+        Route::get('/orders/history', [CashierOrderController::class, 'history'])
+            ->name('orders.history');
     });
