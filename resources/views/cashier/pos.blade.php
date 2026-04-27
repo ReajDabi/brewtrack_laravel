@@ -274,7 +274,7 @@
 
 @push('scripts')
 <script>
-const TAX_RATE = 0.12;
+const TAX_RATE = 0;
 let cart = {};
 
 function filterCategory(catId, btn) {
@@ -300,16 +300,19 @@ function changeQty(id, delta) {
     if (!cart[id]) return;
     cart[id].qty += delta;
     if (cart[id].qty <= 0) delete cart[id];
+    recalculate();
     renderCart();
 }
 
 function removeItem(id) {
     delete cart[id];
+    recalculate();
     renderCart();
 }
 
 function clearCart() {
     cart = {};
+    recalculate();
     renderCart();
 }
 
@@ -319,12 +322,20 @@ function renderCart() {
     const keys      = Object.keys(cart);
 
     if (keys.length === 0) {
-        container.innerHTML = '';
-        container.appendChild(empty);
-        document.getElementById('checkoutBtn').disabled = true;
-        recalculate();
-        return;
-    }
+    container.innerHTML = '';
+    container.appendChild(empty);
+    document.getElementById('checkoutBtn').disabled = true;
+
+    document.getElementById('subtotal').innerHTML        = '&#8369;0.00';
+    document.getElementById('discountDisplay').innerHTML = '&#8369;0.00';
+    document.getElementById('taxAmount').innerHTML       = '&#8369;0.00';
+    document.getElementById('grandTotal').innerHTML      = '&#8369;0.00';
+
+    document.getElementById('amountTendered').value = '';
+    document.getElementById('changeBox').style.display = 'none';
+    recalculate();
+    return; 
+}
 
     var html = '';
     keys.forEach(function(id) {
@@ -349,21 +360,55 @@ function renderCart() {
     recalculate();
 }
 
-function recalculate() {
+/*function recalculate() {
     var subtotal = 0;
     Object.values(cart).forEach(function(item) {
         subtotal += item.price * item.qty;
     });
-
+    
     var discount = parseFloat(document.getElementById('discountInput').value) || 0;
-    var taxable  = subtotal - discount;
+    var taxable  = subtotal - discount; d pasure kung iadd nako ni
     var tax      = taxable > 0 ? taxable * TAX_RATE : 0;
     var total    = taxable > 0 ? taxable + tax : 0;
 
+//kani sa for the meantime
+    var total = subtotal - discount;
+    if (total < 0) total = 0;
+
+    var tax = 0; // force zero
+
     document.getElementById('subtotal').innerHTML       = '&#8369;' + subtotal.toFixed(2);
     document.getElementById('discountDisplay').innerHTML = '&#8369;' + discount.toFixed(2);
-    document.getElementById('taxAmount').innerHTML      = '&#8369;' + tax.toFixed(2);
+    //document.getElementById('taxAmount').innerHTML      = '&#8369;' + tax.toFixed(2);
     document.getElementById('grandTotal').innerHTML     = '&#8369;' + total.toFixed(2);
+    document.getElementById('taxAmount').parentElement.style.display = 'none';
+    updateChange();
+}*/
+
+function recalculate() {
+    var subtotal = 0;
+
+    Object.values(cart).forEach(function(item) {
+        subtotal += Number(item.price) * Number(item.qty);
+    });
+
+    var discountInput = document.getElementById('discountInput').value;
+    var discount = parseFloat(discountInput);
+
+    if (isNaN(discount) || discount < 0) {
+        discount = 0;
+    }
+
+    var total = subtotal - discount;
+    if (total < 0) total = 0;
+
+    var tax = 0; 
+
+    // FORCE UI UPDATE
+    document.getElementById('subtotal').innerHTML        = '&#8369;' + subtotal.toFixed(2);
+    document.getElementById('discountDisplay').innerHTML = '&#8369;' + discount.toFixed(2);
+    document.getElementById('taxAmount').innerHTML       = '&#8369;0.00';
+    document.getElementById('grandTotal').innerHTML      = '&#8369;' + total.toFixed(2);
 
     updateChange();
 }
@@ -380,10 +425,11 @@ function updateChange() {
         return;
     }
 
-    var totalText = document.getElementById('grandTotal').innerHTML;
-    var total     = parseFloat(totalText.replace('&#8369;','').replace(/,/g,'')) || 0;
+    var totalText = document.getElementById('grandTotal').textContent;
+    var total     = parseFloat(totalText.replace('₱','').replace(/,/g,'')) || 0;
     var tendered  = parseFloat(document.getElementById('amountTendered').value) || 0;
 
+    if (total < 0) total = 0;
     if (tendered <= 0) {
         changeBox.style.display = 'none';
         return;
