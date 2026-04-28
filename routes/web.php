@@ -73,7 +73,6 @@ Route::prefix('admin')
         Route::put('/settings', [SettingsController::class, 'update'])
             ->name('settings.update');
     });
-
 // Cashier routes
 Route::prefix('cashier')
     ->name('cashier.')
@@ -84,15 +83,15 @@ Route::prefix('cashier')
         Route::get('/pos', [PosController::class, 'index'])
             ->name('pos');
 
-        // Place order (called by JavaScript)
-        Route::post('/orders', [CashierOrderController::class, 'store'])
-            ->name('orders.store');
+        // History MUST be before {order}/receipt
+        Route::get('/orders/history', [CashierOrderController::class, 'history'])
+            ->name('orders.history');
 
-        // Receipt page
+        // Receipt comes after history
         Route::get('/orders/{order}/receipt', [CashierOrderController::class, 'receipt'])
             ->name('orders.receipt');
 
-        // Order history
-        Route::get('/orders/history', [CashierOrderController::class, 'history'])
-            ->name('orders.history');
+        // Place order
+        Route::post('/orders', [CashierOrderController::class, 'store'])
+            ->name('orders.store');
     });
