@@ -135,21 +135,17 @@ class OrderController extends Controller
     }
 
     // Show the receipt page
-    public function receipt(Order $order)
-    {
-        // Cashiers can only see their own receipts
-        // Admins can see all
-        if (auth()->user()->role !== 'admin'
-            && $order->cashier_id !== auth()->id()) {
-            abort(403);
-        }
+    // Show the receipt page
+public function receipt(Order $order)
+{
+    // Allow any logged-in cashier or admin to view any receipt
+    // This is needed so the receipt loads right after placing an order
+    $order->load('items.menuItem', 'cashier');
 
-        $order->load('items.menuItem', 'cashier');
+    $settings = Setting::all()->pluck('setting_value', 'setting_key');
 
-        $settings = Setting::all()->pluck('setting_value', 'setting_key');
-
-        return view('cashier.receipt', compact('order', 'settings'));
-    }
+    return view('cashier.receipt', compact('order', 'settings'));
+}
 
     // Show order history for cashier
     public function history(Request $request)
