@@ -144,6 +144,75 @@
                 </div>
             </div>
 
+            {{-- Printer Settings --}}
+<div class="card">
+    <div class="card-title">
+        <i class="fas fa-print"></i> Thermal Printer Settings
+    </div>
+
+    <div class="form-group">
+        <label>Printer Name</label>
+        <input type="text" name="printer_name"
+               class="form-control"
+               value="{{ old('printer_name', $settings->get('printer_name', 'XPrinter XP-58IIH')) }}"
+               placeholder="Exact name from Windows Devices and Printers">
+        <small style="color:#9ca3af; font-size:12px;">
+            <i class="fas fa-info-circle"></i>
+            Control Panel → Devices and Printers → right-click → copy exact name
+        </small>
+    </div>
+
+    <div class="form-group">
+        <label>Connection Type</label>
+        <select name="printer_connection" class="form-control"
+                id="printerConnectionSelect">
+            @php
+                $conn = old('printer_connection',
+                    $settings->get('printer_connection', 'windows'));
+            @endphp
+            <option value="windows" {{ $conn === 'windows' ? 'selected' : '' }}>
+                USB (Windows Driver)
+            </option>
+            <option value="network" {{ $conn === 'network' ? 'selected' : '' }}>
+                Network / LAN (IP Address)
+            </option>
+        </select>
+    </div>
+
+    {{-- Network settings (shown only when LAN is selected) --}}
+    <div id="networkFields"
+         style="{{ $settings->get('printer_connection') === 'network' ? '' : 'display:none;' }}">
+        <div class="form-group">
+            <label>Printer IP Address</label>
+            <input type="text" name="printer_ip"
+                   class="form-control"
+                   value="{{ old('printer_ip', $settings->get('printer_ip', '192.168.1.100')) }}"
+                   placeholder="e.g. 192.168.1.100">
+        </div>
+        <div class="form-group">
+            <label>Printer Port</label>
+            <input type="number" name="printer_port"
+                   class="form-control"
+                   value="{{ old('printer_port', $settings->get('printer_port', '9100')) }}"
+                   placeholder="9100">
+        </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:0;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" name="auto_print" value="1"
+                   {{ $settings->get('auto_print', '1') === '1' ? 'checked' : '' }}
+                   style="width:16px; height:16px; accent-color:#6F4E37;">
+            <div>
+                <span style="font-weight:500;">Auto-print receipt on order</span>
+                <div style="font-size:11px; color:#9ca3af;">
+                    Prints automatically when cashier places an order
+                </div>
+            </div>
+        </label>
+    </div>
+</div>
+
             {{-- System Info (read only) --}}
             <div class="card">
                 <div class="card-title">
@@ -249,3 +318,13 @@
 </form>
 
 @endsection
+
+@push('scripts')
+<script>
+    document.getElementById('printerConnectionSelect')
+        .addEventListener('change', function() {
+            document.getElementById('networkFields').style.display =
+                this.value === 'network' ? '' : 'none';
+        });
+</script>
+@endpush
