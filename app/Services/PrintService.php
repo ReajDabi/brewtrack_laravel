@@ -54,36 +54,40 @@ class PrintService
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }
+private function getConnector()
+{
+    $type        = Setting::get('printer_connection', 'linux_usb');
+    $printerName = Setting::get('printer_name',       'Xprinter');
+    $ip          = Setting::get('printer_ip',         '192.168.1.100');
+    $port        = (int) Setting::get('printer_port', 9100);
 
-    /**
-     * Get the correct connector based on connection type
-     */
-    private function getConnector()
-    {
-        $connectionType = Setting::get('printer_connection', 'windows');
-        $printerName    = $this->printerName;
-        $networkIp      = Setting::get('printer_ip', '192.168.1.100');
-        $networkPort    = (int) Setting::get('printer_port', 9100);
+    return match($type) {
 
-        // Choose connection type
-        switch ($connectionType) {
+        // Linux USB direct access (works on Debian automatically)
+        'linux_usb' => new \Mike42\Escpos\PrintConnectors\FilePrintConnector(
+            '/dev/usb/lp0'
+        ),
 
-            // USB printer on Windows (most common for Xprinter)
-            case 'windows':
-                return new WindowsPrintConnector($printerName);
+        // Linux using CUPS print system
+        'cups' => new \Mike42\Escpos\PrintConnectors\CupsPrintConnector(
+            $printerName
+        ),
 
-            // Network/LAN printer
-            case 'network':
-                return new NetworkPrintConnector($networkIp, $networkPort);
+        // Network printer
+        'network' => new \Mike42\Escpos\PrintConnectors\NetworkPrintConnector(
+            $ip, $port
+        ),
 
-            // Linux/Mac file connection
-            case 'file':
-                return new FilePrintConnector('/dev/usb/lp0');
+        // Windows USB
+        'windows' => new \Mike42\Escpos\PrintConnectors\WindowsPrintConnector(
+            $printerName
+        ),
 
-            default:
-                return new WindowsPrintConnector($printerName);
-        }
-    }
+        default => new \Mike42\Escpos\PrintConnectors\FilePrintConnector(
+            '/dev/usb/lp0'
+        ),
+    };
+}
 
     /**
      * Build the receipt content using ESC/POS commands
