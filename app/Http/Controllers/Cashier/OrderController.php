@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Cashier;
 
+use App\Services\PrintService;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -9,7 +10,6 @@ use App\Models\MenuItem;
 use App\Models\Inventory;
 use App\Models\InventoryTransaction;
 use App\Models\Setting;
-use App\Services\PrintService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -38,7 +38,7 @@ class OrderController extends Controller
         // Execute DB transaction to ensure data integrity.
         DB::transaction(function () use ($validated, $taxRate, $request) {
 
-            $subtotal = 0;
+            $subtotal  = 0;
             $lineItems = [];
 
             // Calculate subtotal.
