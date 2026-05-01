@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Inventory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\PrintService;
 
 class ReportController extends Controller
 {
@@ -146,5 +147,92 @@ class ReportController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+        
     }
+/**
+ * Print Sales Report directly to thermal printer
+ */
+public function printSales(Request $request)
+{
+    $dateFrom = $request->get('date_from', now()->startOfMonth()->toDateString());
+    $dateTo   = $request->get('date_to',   now()->toDateString());
+
+    // Gather the same data as the index method
+    $summary = Order::where('status', '!=', 'cancelled')
+        ->whereDate('created_at', '>=', $dateFrom)
+        ->whereDate('created_at', '<=', $dateTo)
+        ->selectRaw('
+            COUNT(*) as total_orders,
+            COALESCE(SUM(subtotal), 0)        as subtotal,
+            COALESCE(SUM(tax_amount), 0)      as total_tax,
+            COALESCE(SUM(discount_amount), 0) as total_discount,
+            COALESCE(SUM(total_amount), 0)    as total_sales
+        ')
+        ->first();
+
+    $salesByDay = Order::where('status', '!=', 'cancelled')
+        ->whereDate('created_at', '>=', $dateFrom)
+        ->whereDate('created_at', '<=', $dateTo)
+        ->selectRaw('DATE(created_at) as date, COUNT(*) as orders, COALESCE(SUM(total_amount), 0) as sales')
+        ->groupBy('date')
+        ->orderBy('date')
+        ->get();
+
+    $topItems = \DB::table('order_items')
+        ->join('menu_items', 'order_items.menu_item_id', '=', 'menu_items.id')
+        ->join('orders',     'order_items.order_id',     '=', 'orders.id')
+        ->where('orders.status', '!=', 'cancelled')
+        ->whereDate('orders.created_at', '>=', $dateFrom)
+        ->whereDate('orders.created_at', '<=', $dateTo)
+        ->selectRaw('menu_items.name, SUM(order_items.quantity) as total_qty, SUM(order_items.total_price) as total_revenue')
+        ->groupBy('menu_items.id', 'menu_items.name')
+        ->orderByDesc('total_qty')
+        ->limit(10)
+        ->get();
+
+    $byPayment = Order::where('status', '!=', 'cancelled')
+        ->whereDate('created_at', '>=', $dateFrom)
+        ->whereDate('created_at', '<=', $dateTo)
+        ->selectRaw('payment_method, COUNT(*) as orders, COALESCE(SUM(total_amount), 0) as total')
+        ->groupBy('payment_method')
+        ->get();
+
+    $printService = new \App\Services\PrintService();
+    $result = $printService->printSalesReport([
+        'date_from'  => $dateFrom,
+        'date_to'    => $dateTo,
+        'summary'    => $summary,
+        'salesByDay' => $salesByDay,
+        'topItems'   => $topItems,
+        'byPayment'  => $byPayment,
+    ]);
+
+    if ($result['success']) {
+        return back()->with('success', 'Sales report sent to printer!');
+    } else {
+        return back()->with('error', 'Print failed: ' . ($result['message'] ?? 'Check printer connection'));
+    }
+}
+
+/**
+ * Print Inventory Report directly to thermal printer
+ */
+public function printInventory()
+{
+    $items = \App\Models\Inventory::where('is_active', true)
+        ->orderBy('item_name')
+        ->get();
+
+    $printService = new \App\Services\PrintService();
+    $result = $printService->printInventoryReport($items->toArray());
+
+    if ($result['success']) {
+        return back()->with('success', 'Inventory report sent to printer!');
+    } else {
+        return back()->with('error', 'Print failed: ' . ($result['message'] ?? 'Check printer connection'));
+    }
+}
+
+
+
 }

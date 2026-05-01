@@ -12,51 +12,37 @@
         <p>Generate and view reports</p>
     </div>
 
-    {{-- Export CSV button --}}
-    <a href="{{ route('admin.reports.export', ['date_from' => $dateFrom, 'date_to' => $dateTo]) }}"
-       class="btn btn-primary">
-        <i class="fas fa-download"></i> Export CSV
-    </a>
-</div>
+    {{-- Print buttons --}}
+    <div style="display:flex; gap:10px;">
 
-{{-- Filters --}}
-<div class="card" style="margin-bottom:20px;">
-    <form method="GET"
-          style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
-
-        <div>
-            <label style="font-size:12px; font-weight:600; color:#6b7280;
-                          display:block; margin-bottom:5px;">Report Type</label>
-            <select name="type" class="form-control" style="width:180px;">
-                <option value="sales"     {{ $type === 'sales'     ? 'selected' : '' }}>
-                    Sales Report
-                </option>
-                <option value="inventory" {{ $type === 'inventory' ? 'selected' : '' }}>
-                    Inventory Report
-                </option>
-            </select>
-        </div>
-
-        <div>
-            <label style="font-size:12px; font-weight:600; color:#6b7280;
-                          display:block; margin-bottom:5px;">From Date</label>
-            <input type="date" name="date_from"
-                   class="form-control" style="width:160px;"
+        {{-- Print Sales Report --}}
+        <form method="POST" action="{{ route('admin.reports.print.sales') }}">
+            @csrf
+            <input type="hidden" name="date_from" id="print_date_from"
                    value="{{ $dateFrom }}">
-        </div>
-
-        <div>
-            <label style="font-size:12px; font-weight:600; color:#6b7280;
-                          display:block; margin-bottom:5px;">To Date</label>
-            <input type="date" name="date_to"
-                   class="form-control" style="width:160px;"
+            <input type="hidden" name="date_to" id="print_date_to"
                    value="{{ $dateTo }}">
-        </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-print"></i> Print Sales
+            </button>
+        </form>
 
-        <button type="submit" class="btn btn-primary">
-            <i class="fas fa-filter"></i> Generate Report
-        </button>
-    </form>
+        {{-- Print Inventory Report --}}
+        <form method="POST" action="{{ route('admin.reports.print.inventory') }}">
+            @csrf
+            <button type="submit" class="btn btn-primary"
+                    style="background:#10b981;">
+                <i class="fas fa-print"></i> Print Inventory
+            </button>
+        </form>
+
+        {{-- Export CSV (existing button) --}}
+        <a href="{{ route('admin.reports.export',
+                   ['date_from' => $dateFrom, 'date_to' => $dateTo]) }}"
+           class="btn btn-secondary">
+            <i class="fas fa-download"></i> Export CSV
+        </a>
+    </div>
 </div>
 
 {{-- ===================== SALES REPORT ===================== --}}
@@ -404,6 +390,15 @@
             }
         }
     });
+      // Keep print form dates in sync with filter form dates
+    document.querySelector('[name="date_from"]').addEventListener('change', function() {
+        document.getElementById('print_date_from').value = this.value;
+    });
+    document.querySelector('[name="date_to"]').addEventListener('change', function() {
+        document.getElementById('print_date_to').value = this.value;
+    });
 </script>
+
+
 @endif
 @endpush
