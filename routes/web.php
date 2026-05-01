@@ -67,6 +67,11 @@ Route::prefix('admin')
             ->name('reports.index');
         Route::get('/reports/export', [ReportController::class, 'export'])
             ->name('reports.export');
+        // Print reports directly to thermal printer
+         Route::post('/reports/print-sales',     [ReportController::class, 'printSales'])
+            ->name('reports.print.sales');
+        Route::post('/reports/print-inventory', [ReportController::class, 'printInventory'])
+             ->name('reports.print.inventory');
 
         Route::get('/settings', [SettingsController::class, 'index'])
             ->name('settings.index');
