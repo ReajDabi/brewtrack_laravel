@@ -54,7 +54,9 @@ class PrintService
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }
-private function getConnector()
+
+    // Get the appropriate printer connector based on settings
+    private function getConnector()
 {
     $type        = Setting::get('printer_connection', 'linux_usb');
     $printerName = Setting::get('printer_name',       'Xprinter');
