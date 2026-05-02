@@ -114,12 +114,12 @@ class PrintService
 
         // Shop name — large and bold
         $printer->setTextSize(2, 2);
-        $printer->setBold(true);
+        $printer->setEmphasis(true);
         $printer->text(strtoupper($shopName) . "\n");
 
         // Reset size
         $printer->setTextSize(1, 1);
-        $printer->setBold(false);
+        $printer->setEmphasis(false);
 
         if ($shopAddress) {
             $printer->text($shopAddress . "\n");
@@ -141,11 +141,11 @@ class PrintService
         $printer->text(str_repeat('-', $width) . "\n");
 
         // Order number — centered and bold
-        $printer->setBold(true);
+        $printer->setEmphasis(true);
         $printer->setTextSize(1, 2); // tall text
         $printer->text($order->order_number . "\n");
         $printer->setTextSize(1, 1);
-        $printer->setBold(false);
+        $printer->setEmphasis(false);
 
         $printer->text(str_repeat('-', $width) . "\n");
 
@@ -176,11 +176,11 @@ class PrintService
         $printer->text(str_repeat('-', $width) . "\n");
 
         // Column headers
-        $printer->setBold(true);
+        $printer->setEmphasis(true);
         $printer->text(
             $this->itemRow('ITEM', 'QTY', 'TOTAL', $width) . "\n"
         );
-        $printer->setBold(false);
+        $printer->setEmphasis(false);
 
         $printer->text(str_repeat('-', $width) . "\n");
 
@@ -229,13 +229,13 @@ class PrintService
         // Total — bold and large
         $printer->text(str_repeat('=', $width) . "\n");
 
-        $printer->setBold(true);
+        $printer->setEmphasis(true);
         $printer->setTextSize(1, 2);
         $printer->text(
             $this->twoColumns('TOTAL:', '₱' . number_format($order->total_amount, 2), $width) . "\n"
         );
         $printer->setTextSize(1, 1);
-        $printer->setBold(false);
+        $printer->setEmphasis(false);
 
         $printer->text(str_repeat('=', $width) . "\n");
 
@@ -244,11 +244,11 @@ class PrintService
             $printer->text(
                 $this->twoColumns('Cash:', '₱' . number_format($order->amount_tendered, 2), $width) . "\n"
             );
-            $printer->setBold(true);
+            $printer->setEmphasis(true);
             $printer->text(
                 $this->twoColumns('Change:', '₱' . number_format($order->change_amount, 2), $width) . "\n"
             );
-            $printer->setBold(false);
+            $printer->setEmphasis(false);
         }
 
         // Payment method
@@ -263,9 +263,9 @@ class PrintService
         $printer->feed(1);
 
         $printer->setJustification(Printer::JUSTIFY_CENTER);
-        $printer->setBold(true);
+        $printer->setEmphasis(true);
         $printer->text(strtoupper($footer) . "\n");
-        $printer->setBold(false);
+        $printer->setEmphasis(false);
         $printer->text("Thank you for your purchase!\n");
         $printer->feed(1);
         $printer->text(
