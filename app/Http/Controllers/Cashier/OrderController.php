@@ -9,19 +9,21 @@ use App\Models\MenuItem;
 use App\Models\Inventory;
 use App\Models\InventoryTransaction;
 use App\Models\Setting;
+use App\Services\PrintService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
-    // Save a new order from the POS
+    // Save new POS order.
     public function store(Request $request)
     {
-        // Validate what the POS sends
+        // Validate POS request payload.
         $validated = $request->validate([
             'customer_name'   => 'nullable|string|max:100',
             'payment_method'  => 'required|in:cash,card,gcash,maya',
-            'amount_tendered' => 'nullable|numeric|min:0',
+            'amount_tendered' => 'required|numeric|min:0',
             'discount_amount' => 'nullable|numeric|min:0',
             'notes'           => 'nullable|string|max:500',
             'items'           => 'required|array|min:1',
@@ -30,17 +32,16 @@ class OrderController extends Controller
             'items.*.customization' => 'nullable|string|max:255',
         ]);
 
-        // Get tax rate from settings (default 12%)
+        // Get tax rate from settings.
         $taxRate = (float) Setting::get('tax_rate', 0.12);
 
-        // Wrap everything in a transaction
-        // If anything fails, ALL changes are undone
+        // Execute DB transaction to ensure data integrity.
         DB::transaction(function () use ($validated, $taxRate, $request) {
 
             $subtotal = 0;
             $lineItems = [];
 
-            // Step 1: Calculate subtotal from cart items
+            // Calculate subtotal.
             foreach ($validated['items'] as $cartItem) {
                 $menuItem  = MenuItem::findOrFail($cartItem['menu_item_id']);
                 $lineTotal = $menuItem->price * $cartItem['quantity'];
@@ -55,7 +56,7 @@ class OrderController extends Controller
                 ];
             }
 
-            // Step 2: Calculate totals
+            // Calculate final totals.
             $discountAmount = $validated['discount_amount'] ?? 0;
             $taxableAmount  = $subtotal - $discountAmount;
             $taxAmount      = round($taxableAmount * $taxRate, 2);
@@ -64,7 +65,7 @@ class OrderController extends Controller
                 ? max(0, $validated['amount_tendered'] - $totalAmount)
                 : 0;
 
-            // Step 3: Create the order
+            // Create order record.
             $order = Order::create([
                 'order_number'    => Order::generateOrderNumber(),
                 'cashier_id'      => auth()->id(),
@@ -80,34 +81,25 @@ class OrderController extends Controller
                 'status'          => 'pending',
             ]);
 
-            // Step 4: Save each order item
+            // Save order items.
             foreach ($lineItems as $lineItem) {
-                OrderItem::create(array_merge(
-                    $lineItem,
-                    ['order_id' => $order->id]
-                ));
+                OrderItem::create(array_merge($lineItem, ['order_id' => $order->id]));
             }
 
-            // Step 5: Deduct inventory for each item ordered
+            // Deduct inventory and log transactions.
             foreach ($validated['items'] as $cartItem) {
-                $menuItem = MenuItem::with('ingredients')
-                    ->find($cartItem['menu_item_id']);
+                $menuItem = MenuItem::with('ingredients')->find($cartItem['menu_item_id']);
 
                 foreach ($menuItem->ingredients as $ingredient) {
-                    // How much to deduct from stock
-                    $deductQty = $ingredient->pivot->quantity_needed
-                               * $cartItem['quantity'];
-
+                    $deductQty = $ingredient->pivot->quantity_needed * $cartItem['quantity'];
                     $inv = Inventory::find($ingredient->id);
 
                     if ($inv) {
                         $previousStock = $inv->quantity_in_stock;
                         $newStock      = max(0, $previousStock - $deductQty);
 
-                        // Update stock
                         $inv->update(['quantity_in_stock' => $newStock]);
 
-                        // Record the transaction
                         InventoryTransaction::create([
                             'inventory_id'     => $inv->id,
                             'transaction_type' => 'out',
@@ -122,36 +114,42 @@ class OrderController extends Controller
                 }
             }
 
-            // Save order ID to session for redirect
+            // Save order ID for redirect.
             session(['last_order_id' => $order->id]);
         });
 
-        // Return JSON response to the POS JavaScript
+        // Trigger thermal printer if enabled.
+        if (Setting::get('auto_print', '1') == '1') {
+            try {
+                $createdOrder = Order::with(['items.menuItem', 'cashier'])->find(session('last_order_id'));
+                $printService = new PrintService();
+                $printService->printReceipt($createdOrder);
+                Log::info("Print successfully triggered for Order: " . $createdOrder->order_number);
+            } catch (\Exception $e) {
+                Log::error("Controller Print Error: " . $e->getMessage());
+            }
+        }
+
+        // Return success JSON to POS.
         return response()->json([
             'success'     => true,
-            'receipt_url' => route('cashier.orders.receipt',
-                                   session('last_order_id')),
+            'receipt_url' => route('cashier.orders.receipt', session('last_order_id')),
         ]);
     }
 
-    // Show the receipt page
-    // Show the receipt page
-public function receipt(Order $order)
-{
-    // Allow any logged-in cashier or admin to view any receipt
-    // This is needed so the receipt loads right after placing an order
-    $order->load('items.menuItem', 'cashier');
+    // Show receipt page.
+    public function receipt(Order $order)
+    {
+        $order->load('items.menuItem', 'cashier');
+        $settings = Setting::all()->pluck('setting_value', 'setting_key');
+        
+        return view('cashier.receipt', compact('order', 'settings'));
+    }
 
-    $settings = Setting::all()->pluck('setting_value', 'setting_key');
-
-    return view('cashier.receipt', compact('order', 'settings'));
-}
-
-    // Show order history for cashier
+    // Show cashier order history.
     public function history(Request $request)
     {
-        $query = Order::where('cashier_id', auth()->id())
-                      ->with('items');
+        $query = Order::where('cashier_id', auth()->id())->with('items');
 
         if ($request->filled('date')) {
             $query->whereDate('created_at', $request->date);
@@ -160,7 +158,7 @@ public function receipt(Order $order)
         }
 
         $orders = $query->latest()->paginate(20)->withQueryString();
-
+        
         return view('cashier.history', compact('orders'));
     }
 }

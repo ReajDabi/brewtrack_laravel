@@ -26,70 +26,68 @@ class PrintService
      * Print a receipt for the given order
      * Called automatically after order is placed
      */
-    public function printReceipt(Order $order): array
+    public function printReceipt(Order $order)
     {
-        // Load order relationships
-        $order->load('items.menuItem', 'cashier');
+        $connector = null;
+        $printer = null;
 
         try {
-            // Connect to the printer
+            // 1. Establish connector
             $connector = $this->getConnector();
-            $printer   = new Printer($connector);
+            
+            // 2. Initialize printer
+            $printer = new \Mike42\Escpos\Printer($connector);
 
-            // Build and print the receipt
+            // 3. Call your formatting method to build the actual receipt
             $this->buildReceipt($printer, $order);
 
-            // Cut the paper
+            // 4. Finish print job (buildReceipt does feed(3), we just need to cut)
             $printer->cut();
 
-            // Close the connection
-            $printer->close();
-
-            return ['success' => true, 'message' => 'Receipt printed successfully'];
-
         } catch (\Exception $e) {
-            // Log the error but don't crash the app
-            \Log::error('Print error: ' . $e->getMessage());
-
-            return ['success' => false, 'message' => $e->getMessage()];
+            // Log the actual error that interrupted the print
+            \Illuminate\Support\Facades\Log::error("PrintService Error: " . $e->getMessage());
+        } finally {
+            // 5. The Bulletproof Cleanup: This runs NO MATTER WHAT
+            if ($printer !== null) {
+                try { 
+                    $printer->close(); 
+                } catch (\Exception $e) {
+                    // Ignore close errors
+                }
+            } elseif ($connector !== null && method_exists($connector, 'finalize')) {
+                // If printer instantiation failed but connector opened, force close it
+                $connector->finalize();
+            }
         }
     }
 
     // Get the appropriate printer connector based on settings
     private function getConnector()
-{
-    $type        = Setting::get('printer_connection', 'linux_usb');
-    $printerName = Setting::get('printer_name',       'Xprinter');
-    $ip          = Setting::get('printer_ip',         '192.168.1.100');
-    $port        = (int) Setting::get('printer_port', 9100);
+    {
+        $type        = Setting::get('printer_connection', 'linux_usb');
+        $printerName = Setting::get('printer_name',       'Xprinter');
+        $ip          = Setting::get('printer_ip',         '192.168.1.100');
+        $port        = (int) Setting::get('printer_port', 9100);
 
-    return match($type) {
-
-        // Linux USB direct access (works on Debian automatically)
-        'linux_usb' => new \Mike42\Escpos\PrintConnectors\FilePrintConnector(
-            '/dev/usb/lp0'
-        ),
-
-        // Linux using CUPS print system
-        'cups' => new \Mike42\Escpos\PrintConnectors\CupsPrintConnector(
-            $printerName
-        ),
-
-        // Network printer
-        'network' => new \Mike42\Escpos\PrintConnectors\NetworkPrintConnector(
-            $ip, $port
-        ),
-
-        // Windows USB
-        'windows' => new \Mike42\Escpos\PrintConnectors\WindowsPrintConnector(
-            $printerName
-        ),
-
-        default => new \Mike42\Escpos\PrintConnectors\FilePrintConnector(
-            '/dev/usb/lp0'
-        ),
-    };
-}
+        return match($type) {
+            'linux_usb' => new \Mike42\Escpos\PrintConnectors\FilePrintConnector(
+                '/dev/usb/lp1'    // ← lp1 not lp0
+            ),
+            'cups' => new \Mike42\Escpos\PrintConnectors\CupsPrintConnector(
+                $printerName
+            ),
+            'network' => new \Mike42\Escpos\PrintConnectors\NetworkPrintConnector(
+                $ip, $port
+            ),
+            'windows' => new \Mike42\Escpos\PrintConnectors\WindowsPrintConnector(
+                $printerName
+            ),
+            default => new \Mike42\Escpos\PrintConnectors\FilePrintConnector(
+                '/dev/usb/lp1'    // ← lp1 not lp0
+            ),
+        };
+    }
 
     /**
      * Build the receipt content using ESC/POS commands
