@@ -10,7 +10,6 @@ use App\Models\MenuItem;
 use App\Models\Inventory;
 use App\Models\InventoryTransaction;
 use App\Models\Setting;
-use App\Services\PrintService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
