@@ -186,7 +186,7 @@ class PrintService
         foreach ($order->items as $item) {
             $name     = strtoupper($item->menuItem->name ?? 'ITEM');
             $quantity = (string) $item->quantity;
-            $total    = '₱' . number_format($item->total_price, 2);
+            $total    = 'PHP' . number_format($item->total_price, 2);
 
             // Item name row
             $printer->text(
@@ -195,7 +195,7 @@ class PrintService
 
             // Unit price below item name
             $printer->text(
-                '  @ ₱' . number_format($item->unit_price, 2) . " each\n"
+                '  @ PHP' . number_format($item->unit_price, 2) . " each\n"
             );
 
             // Customization if any
@@ -211,17 +211,17 @@ class PrintService
         $printer->text(str_repeat('-', $width) . "\n");
 
         $printer->text(
-            $this->twoColumns('Subtotal:', '₱' . number_format($order->subtotal, 2), $width) . "\n"
+            $this->twoColumns('Subtotal:', 'PHP' . number_format($order->subtotal, 2), $width) . "\n"
         );
 
         if ($order->discount_amount > 0) {
             $printer->text(
-                $this->twoColumns('Discount:', '-₱' . number_format($order->discount_amount, 2), $width) . "\n"
+                $this->twoColumns('Discount:', '-PHP' . number_format($order->discount_amount, 2), $width) . "\n"
             );
         }
 
         $printer->text(
-            $this->twoColumns('VAT (12%):', '₱' . number_format($order->tax_amount, 2), $width) . "\n"
+            $this->twoColumns('VAT (12%):', 'PHP' . number_format($order->tax_amount, 2), $width) . "\n"
         );
 
         // Total — bold and large
@@ -230,7 +230,7 @@ class PrintService
         $printer->setEmphasis(true);
         $printer->setTextSize(1, 2);
         $printer->text(
-            $this->twoColumns('TOTAL:', '₱' . number_format($order->total_amount, 2), $width) . "\n"
+            $this->twoColumns('TOTAL:', 'PHP' . number_format($order->total_amount, 2), $width) . "\n"
         );
         $printer->setTextSize(1, 1);
         $printer->setEmphasis(false);
@@ -240,11 +240,11 @@ class PrintService
         // Cash and change
         if ($order->amount_tendered) {
             $printer->text(
-                $this->twoColumns('Cash:', '₱' . number_format($order->amount_tendered, 2), $width) . "\n"
+                $this->twoColumns('Cash:', 'PHP' . number_format($order->amount_tendered, 2), $width) . "\n"
             );
             $printer->setEmphasis(true);
             $printer->text(
-                $this->twoColumns('Change:', '₱' . number_format($order->change_amount, 2), $width) . "\n"
+                $this->twoColumns('Change:', 'PHP' . number_format($order->change_amount, 2), $width) . "\n"
             );
             $printer->setEmphasis(false);
         }
@@ -278,7 +278,7 @@ class PrintService
     /**
      * Helper: create a two-column line
      * Left text and right text with spaces in between
-     * Example: "Total:          ₱150.00"
+     * Example: "Total:          PHP150.00"
      */
     private function twoColumns(string $left, string $right, int $width): string
     {
@@ -289,7 +289,7 @@ class PrintService
 
     /**
      * Helper: create a three-column item row
-     * Example: "CAPPUCCINO         2     ₱240.00"
+     * Example: "CAPPUCCINO         2     PHP240.00"
      */
     private function itemRow(string $name, string $qty, string $total, int $width): string
     {

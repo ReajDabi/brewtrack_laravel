@@ -161,4 +161,5 @@ class OrderController extends Controller
         
         return view('cashier.history', compact('orders'));
     }
+    
 }
