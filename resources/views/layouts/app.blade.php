@@ -6,6 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') — BrewTrack</title>
+    {{-- PWA Manifest --}}
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#6F4E37">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="BrewTrack">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -852,40 +859,40 @@
 
                     {{-- Dropdown --}}
                     <div id="notifDropdown" style="display:none; position:absolute;
-                                right:0; top:44px; width:300px;
-                                background:white; border-radius:12px;
-                                box-shadow:0 8px 30px rgba(0,0,0,0.15);
-                                z-index:9999; overflow:hidden;
-                                max-height:400px; overflow-y:auto;">
+                                    right:0; top:44px; width:300px;
+                                    background:white; border-radius:12px;
+                                    box-shadow:0 8px 30px rgba(0,0,0,0.15);
+                                    z-index:9999; overflow:hidden;
+                                    max-height:400px; overflow-y:auto;">
 
                         <div style="padding:14px 16px;
-                                    border-bottom:1px solid #f3f4f6;
-                                    display:flex; align-items:center;
-                                    justify-content:space-between;">
+                                        border-bottom:1px solid #f3f4f6;
+                                        display:flex; align-items:center;
+                                        justify-content:space-between;">
                             <span style="font-weight:600; font-size:14px;">
                                 Stock Alerts
                             </span>
                             <button onclick="markAllRead()" style="background:none; border:none;
-                                           font-size:12px; color:#6F4E37;
-                                           cursor:pointer; font-family:'Poppins',sans-serif;">
+                                               font-size:12px; color:#6F4E37;
+                                               cursor:pointer; font-family:'Poppins',sans-serif;">
                                 Mark all read
                             </button>
                         </div>
 
                         <div id="notifList">
                             <div style="padding:24px; text-align:center;
-                                        color:#9ca3af; font-size:13px;">
+                                            color:#9ca3af; font-size:13px;">
                                 <i class="fas fa-bell-slash" style="font-size:24px; display:block;
-                                          margin-bottom:8px; opacity:0.4;"></i>
+                                              margin-bottom:8px; opacity:0.4;"></i>
                                 No new alerts
                             </div>
                         </div>
 
                         <a href="{{ route('admin.notifications.index') }}" style="display:block; padding:12px 16px;
-                                  text-align:center; font-size:13px;
-                                  color:#6F4E37; text-decoration:none;
-                                  border-top:1px solid #f3f4f6;
-                                  font-weight:500;">
+                                      text-align:center; font-size:13px;
+                                      color:#6F4E37; text-decoration:none;
+                                      border-top:1px solid #f3f4f6;
+                                      font-weight:500;">
                             View all notifications →
                         </a>
                     </div>
@@ -999,13 +1006,13 @@
 
                 if (notifications.length === 0) {
                     list.innerHTML = `
-                <div style="padding:24px; text-align:center;
-                            color:#9ca3af; font-size:13px;">
-                    <i class="fas fa-bell-slash"
-                       style="font-size:24px; display:block;
-                              margin-bottom:8px; opacity:0.4;"></i>
-                    No new alerts
-                </div>`;
+                    <div style="padding:24px; text-align:center;
+                                color:#9ca3af; font-size:13px;">
+                        <i class="fas fa-bell-slash"
+                           style="font-size:24px; display:block;
+                                  margin-bottom:8px; opacity:0.4;"></i>
+                        No new alerts
+                    </div>`;
                     return;
                 }
 
@@ -1022,30 +1029,30 @@
                     var label = isCritical ? 'CRITICAL' : 'LOW STOCK';
 
                     html += `
-            <div style="padding:12px 16px; border-bottom:1px solid #f3f4f6;
-                        background:${bgColor};">
-                <div style="display:flex; align-items:flex-start; gap:10px;">
-                    <i class="fas ${icon}"
-                       style="color:${isCritical ? '#ef4444' : '#f59e0b'};
-                              margin-top:2px; font-size:14px;"></i>
-                    <div style="flex:1; min-width:0;">
-                        <div style="font-size:13px; font-weight:600;
-                                    color:#1a1a2e;">
-                            ${n.item}
+                <div style="padding:12px 16px; border-bottom:1px solid #f3f4f6;
+                            background:${bgColor};">
+                    <div style="display:flex; align-items:flex-start; gap:10px;">
+                        <i class="fas ${icon}"
+                           style="color:${isCritical ? '#ef4444' : '#f59e0b'};
+                                  margin-top:2px; font-size:14px;"></i>
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-size:13px; font-weight:600;
+                                        color:#1a1a2e;">
+                                ${n.item}
+                            </div>
+                            <div style="font-size:11px; color:#6b7280;
+                                        margin-top:2px;">
+                                Stock: ${n.stock} ${n.unit}
+                                &nbsp;·&nbsp; ${n.time}
+                            </div>
                         </div>
-                        <div style="font-size:11px; color:#6b7280;
-                                    margin-top:2px;">
-                            Stock: ${n.stock} ${n.unit}
-                            &nbsp;·&nbsp; ${n.time}
-                        </div>
+                        <span style="font-size:10px; font-weight:700;
+                                     padding:2px 6px; border-radius:4px;
+                                     white-space:nowrap; ${badgeColor}">
+                            ${label}
+                        </span>
                     </div>
-                    <span style="font-size:10px; font-weight:700;
-                                 padding:2px 6px; border-radius:4px;
-                                 white-space:nowrap; ${badgeColor}">
-                        ${label}
-                    </span>
-                </div>
-            </div>`;
+                </div>`;
                 });
 
                 list.innerHTML = html;
@@ -1092,6 +1099,21 @@
         </script>
     @endif
     @stack('scripts')
+
+    {{-- Register Service Worker for PWA --}}
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js')
+                .then(function(reg) {
+                    console.log('SW registered:', reg.scope);
+                })
+                .catch(function(err) {
+                    console.log('SW registration failed:', err);
+                });
+        });
+    }
+</script>
 </body>
 
 </html>
