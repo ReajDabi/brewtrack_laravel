@@ -36,12 +36,10 @@
             </button>
         </form>
 
-        {{-- Export CSV (existing button) --}}
-        <a href="{{ route('admin.reports.export',
-                   ['date_from' => $dateFrom, 'date_to' => $dateTo]) }}"
-           class="btn btn-secondary">
-            <i class="fas fa-download"></i> Export CSV
-        </a>
+      {{-- Export CSV (existing button) --}}
+        <a href="{{ route('admin.reports.export', ['date_from' => $dateFrom, 'date_to' => $dateTo]) }}" class="btn btn-secondary">
+            <i class="fas fa-download"></i> Export CSV
+        </a>
     </div>
 </div>
 
@@ -275,22 +273,17 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($inventoryItems as $item)
-                        @php
-                            $status     = $item->stock_status;
-                            $stockValue = $item->quantity_in_stock * ($item->unit_cost ?? 0);
-                        @endphp
-                        <tr>
-                            <td style="color:#9ca3af; font-size:12px;">
-                                {{ $item->item_code ?? '—' }}
-                            </td>
-                            <td style="font-weight:500;">{{ $item->item_name }}</td>
-                            <td>{{ $item->unit_of_measure }}</td>
-                            <td style="font-weight:600;
-                                       color:{{ $status === 'critical' ? '#ef4444' :
-                                               ($status === 'low'      ? '#f59e0b' : '#10b981') }}">
-                                {{ number_format($item->quantity_in_stock, 2) }}
-                            </td>
+                    @foreach($inventoryItems as $item)
+                        @php
+                            $status = $item->stock_status;
+                            $stockValue = $item->quantity_in_stock * ($item->unit_cost ?? 0);
+                        @endphp
+                        <tr>
+                           <td style="font-weight:500;">{{ $item->item_name }}</td>
+                            <td>{{ $item->unit_of_measure }}</td>
+                            <td style="font-weight:600; color:{{ $status === 'critical' ? '#ef4444' : ($status === 'low' ? '#f59e0b' : '#10b981') }}">
+                                {{ number_format($item->quantity_in_stock, 2) }}
+                            </td>
                             <td>{{ $item->reorder_level }}</td>
                             <td>{{ $item->critical_level }}</td>
                             <td>
@@ -334,11 +327,7 @@
                             Total Stock Value:
                         </td>
                         <td style="color:#6F4E37;">
-                            &#8369;{{ number_format(
-                                $inventoryItems->sum(fn($i) =>
-                                    $i->quantity_in_stock * ($i->unit_cost ?? 0)
-                                ), 2
-                            ) }}
+                            &#8369;{{ number_format($inventoryItems->sum(fn($i) => $i->quantity_in_stock * ($i->unit_cost ?? 0) ), 2) }}
                         </td>
                         <td></td>
                     </tr>

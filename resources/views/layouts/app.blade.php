@@ -755,9 +755,7 @@
         <div class="sidebar-brand">
             <i class="fas fa-coffee"></i>
             <span>BrewTrack</span>
-            <button class="sidebar-close" onclick="closeSidebar()">
-                <i class="fas fa-times"></i>
-            </button>
+          
         </div>
 
         <div class="sidebar-user">
