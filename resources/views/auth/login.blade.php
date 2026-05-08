@@ -108,6 +108,33 @@
             font-size: 13px; margin-bottom: 16px;
             display: flex; align-items: center; gap: 8px;
         }
+
+        /* --- MOBILE RESPONSIVENESS --- */
+        @media (max-width: 768px) {
+            .login-card {
+                flex-direction: column; /* Stacks the panels vertically */
+                height: auto;
+                min-height: auto;
+            }
+            
+            .login-left {
+                padding: 30px 20px;
+                /* Optional: Hide features on mobile to save space */
+                /* .feature-list { display: none; } */
+            }
+
+            .logo-circle {
+                width: 60px; height: 60px;
+                font-size: 24px;
+                margin-bottom: 12px;
+            }
+
+            .login-left h1 { font-size: 24px; }
+            
+            .login-right {
+                padding: 30px 20px;
+            }
+        }
     </style>
 </head>
 <body>

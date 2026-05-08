@@ -79,15 +79,15 @@
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
-                @forelse($items as $item)
-                    @php
-                        $status = $item->stock_status;
-                    @endphp
-                    <tr>
-                        <td style="color:#9ca3af; font-size:12px;">
-                            {{ $item->item_code ?? '—' }}
-                        </td>
+           <tbody>
+                @forelse($items as $item)
+                    @php
+                        $status = $item->stock_status;
+                    @endphp
+                    <tr>
+                        <td style="color:#9ca3af; font-size:12px;">
+                            {{ $item->item_code ?? '—' }}
+                        </td>
                         <td style="font-weight:500;">{{ $item->item_name }}</td>
                         <td>{{ $item->unit_of_measure }}</td>
                         <td>

@@ -57,18 +57,17 @@
 <div class="card" style="margin-bottom:16px;">
     <form method="GET" style="display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap;">
 
-        <div>
-            <label style="font-size:12px; font-weight:600; color:#6b7280;
-                          display:block; margin-bottom:5px;">Status</label>
-            <select name="status" class="form-control" style="width:160px;">
-                <option value="">All Status</option>
-                <option value="pending"   {{ request('status') === 'pending'   ? 'selected' : '' }}>Pending</option>
-                <option value="preparing" {{ request('status') === 'preparing' ? 'selected' : '' }}>Preparing</option>
-                <option value="ready"     {{ request('status') === 'ready'     ? 'selected' : '' }}>Ready</option>
-                <option value="served"    {{ request('status') === 'served'    ? 'selected' : '' }}>Served</option>
-                <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-            </select>
-        </div>
+      <div>
+            <label style="font-size:12px; font-weight:600; color:#6b7280; display:block; margin-bottom:5px;">Status</label>
+            <select name="status" class="form-control" style="width:160px;">
+                <option value="">All Status</option>
+                <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+                <option value="preparing" {{ request('status') === 'preparing' ? 'selected' : '' }}>Preparing</option>
+                <option value="ready" {{ request('status') === 'ready' ? 'selected' : '' }}>Ready</option>
+                <option value="served" {{ request('status') === 'served' ? 'selected' : '' }}>Served</option>
+                <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+            </select>
+        </div>
 
         <div>
             <label style="font-size:12px; font-weight:600; color:#6b7280;
