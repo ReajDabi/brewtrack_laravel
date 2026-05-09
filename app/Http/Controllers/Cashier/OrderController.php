@@ -12,6 +12,7 @@ use App\Models\InventoryTransaction;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\StockAlertService;
 
 class OrderController extends Controller
 {
@@ -89,6 +90,38 @@ class OrderController extends Controller
                         $previousStock = $inv->quantity_in_stock;
                         $newStock      = max(0, $previousStock - $deductQty);
                         $inv->update(['quantity_in_stock' => $newStock]);
+                        // Step 5: Deduct inventory for each item ordered
+foreach ($validated['items'] as $cartItem) {
+    $menuItem = MenuItem::with('ingredients')
+        ->find($cartItem['menu_item_id']);
+
+    foreach ($menuItem->ingredients as $ingredient) {
+        $deductQty = $ingredient->pivot->quantity_needed
+                   * $cartItem['quantity'];
+        $inv       = Inventory::find($ingredient->id);
+
+        if ($inv) {
+            $previousStock = $inv->quantity_in_stock;
+            $newStock      = max(0, $previousStock - $deductQty);
+            $inv->update(['quantity_in_stock' => $newStock]);
+
+            InventoryTransaction::create([
+                'inventory_id'     => $inv->id,
+                'transaction_type' => 'out',
+                'quantity'         => $deductQty,
+                'previous_stock'   => $previousStock,
+                'new_stock'        => $newStock,
+                'reference_type'   => 'order',
+                'reference_id'     => $order->id,
+                'performed_by'     => auth()->id(),
+            ]);
+
+            // ← ADD THIS: Check if stock is now low
+            $inv->refresh(); // get updated stock value
+            (new StockAlertService())->checkAndAlert($inv);
+        }
+    }
+}
 
                         InventoryTransaction::create([
                             'inventory_id'     => $inv->id,

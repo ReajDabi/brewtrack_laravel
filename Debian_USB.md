@@ -46,3 +46,7 @@ Save with Ctrl+X → Y → Enter
 # Reload udev rules
 sudo udevadm control --reload-rules
 sudo udevadm trigger
+
+ php artisan serve --host=0.0.0.0 --port=8000
+
+  hostname -I                                 
