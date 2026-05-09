@@ -101,6 +101,38 @@ class OrderController extends Controller
                         $newStock      = max(0, $previousStock - $deductQty);
 
                         $inv->update(['quantity_in_stock' => $newStock]);
+                        // Step 5: Deduct inventory for each item ordered
+foreach ($validated['items'] as $cartItem) {
+    $menuItem = MenuItem::with('ingredients')
+        ->find($cartItem['menu_item_id']);
+
+    foreach ($menuItem->ingredients as $ingredient) {
+        $deductQty = $ingredient->pivot->quantity_needed
+                   * $cartItem['quantity'];
+        $inv       = Inventory::find($ingredient->id);
+
+        if ($inv) {
+            $previousStock = $inv->quantity_in_stock;
+            $newStock      = max(0, $previousStock - $deductQty);
+            $inv->update(['quantity_in_stock' => $newStock]);
+
+            InventoryTransaction::create([
+                'inventory_id'     => $inv->id,
+                'transaction_type' => 'out',
+                'quantity'         => $deductQty,
+                'previous_stock'   => $previousStock,
+                'new_stock'        => $newStock,
+                'reference_type'   => 'order',
+                'reference_id'     => $order->id,
+                'performed_by'     => auth()->id(),
+            ]);
+
+            // ← ADD THIS: Check if stock is now low
+            $inv->refresh(); // get updated stock value
+            (new StockAlertService())->checkAndAlert($inv);
+        }
+    }
+}
 
                         InventoryTransaction::create([
                             'inventory_id'     => $inv->id,
@@ -119,6 +151,25 @@ class OrderController extends Controller
             // Save order ID for redirect.
             session(['last_order_id' => $order->id]);
         });
+        // ── END SAVE ORDER ───────────────────────────────────
+
+        $orderId     = session('last_order_id');
+        $printResult = ['success' => false];
+
+        // ── AUTO PRINT ───────────────────────────────────────
+        if (Setting::get('auto_print', '1') === '1') {
+            try {
+                $printService = new PrintService();
+                $printResult  = $printService->printReceipt(Order::find($orderId));
+
+                if (!$printResult['success']) {
+                    \Log::warning('Auto-print failed: ' . ($printResult['message'] ?? 'Unknown'));
+                }
+            } catch (\Exception $e) {
+                \Log::error('PrintService error: ' . $e->getMessage());
+                $printResult = ['success' => false, 'message' => $e->getMessage()];
+            }
+        }
 
         // Trigger thermal printer if enabled.
         if (Setting::get('auto_print', '1') == '1') {
