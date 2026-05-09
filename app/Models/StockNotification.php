@@ -21,9 +21,9 @@ class StockNotification extends Model
     protected $casts = [
         'is_read'    => 'boolean',
         'email_sent' => 'boolean',
+        'created_at' => 'datetime', // ← add this line
     ];
 
-    // A notification belongs to one inventory item
     public function inventory()
     {
         return $this->belongsTo(Inventory::class);
