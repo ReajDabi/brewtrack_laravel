@@ -29,7 +29,7 @@ exit
 
 
 If this prints → everything is working.
-If you get permission error → run sudo chmod 666 /dev/usb/lp0 again.
+If you get permission error → run sudo chmod 666 /dev/usb/lp1 again.
 
 
 Make printer permission permanent

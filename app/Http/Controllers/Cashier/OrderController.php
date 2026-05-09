@@ -21,7 +21,7 @@ class OrderController extends Controller
         $validated = $request->validate([
             'customer_name'         => 'nullable|string|max:100',
             'payment_method'        => 'required|in:cash,card,gcash,maya',
-            'amount_tendered'       => 'nullable|numeric|min:0',
+            'amount_tendered'       => 'required|numeric|min:0',
             'discount_amount'       => 'nullable|numeric|min:0',
             'notes'                 => 'nullable|string|max:500',
             'items'                 => 'required|array|min:1',
@@ -69,7 +69,7 @@ class OrderController extends Controller
                 'discount_amount' => $discountAmount,
                 'total_amount'    => $totalAmount,
                 'payment_method'  => $validated['payment_method'],
-                'amount_tendered' => $validated['amount_tendered'] ?? null,
+                'amount_tendered' => $validated['amount_tendered'],
                 'change_amount'   => $changeAmount,
                 'notes'           => $validated['notes'] ?? null,
                 'status'          => 'pending',
