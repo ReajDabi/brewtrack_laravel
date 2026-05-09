@@ -26,70 +26,68 @@ class PrintService
      * Print a receipt for the given order
      * Called automatically after order is placed
      */
-    public function printReceipt(Order $order): array
+    public function printReceipt(Order $order)
     {
-        // Load order relationships
-        $order->load('items.menuItem', 'cashier');
+        $connector = null;
+        $printer = null;
 
         try {
-            // Connect to the printer
+            // 1. Establish connector
             $connector = $this->getConnector();
-            $printer   = new Printer($connector);
+            
+            // 2. Initialize printer
+            $printer = new \Mike42\Escpos\Printer($connector);
 
-            // Build and print the receipt
+            // 3. Call your formatting method to build the actual receipt
             $this->buildReceipt($printer, $order);
 
-            // Cut the paper
+            // 4. Finish print job (buildReceipt does feed(3), we just need to cut)
             $printer->cut();
 
-            // Close the connection
-            $printer->close();
-
-            return ['success' => true, 'message' => 'Receipt printed successfully'];
-
         } catch (\Exception $e) {
-            // Log the error but don't crash the app
-            \Log::error('Print error: ' . $e->getMessage());
-
-            return ['success' => false, 'message' => $e->getMessage()];
+            // Log the actual error that interrupted the print
+            \Illuminate\Support\Facades\Log::error("PrintService Error: " . $e->getMessage());
+        } finally {
+            // 5. The Bulletproof Cleanup: This runs NO MATTER WHAT
+            if ($printer !== null) {
+                try { 
+                    $printer->close(); 
+                } catch (\Exception $e) {
+                    // Ignore close errors
+                }
+            } elseif ($connector !== null && method_exists($connector, 'finalize')) {
+                // If printer instantiation failed but connector opened, force close it
+                $connector->finalize();
+            }
         }
     }
 
     // Get the appropriate printer connector based on settings
     private function getConnector()
-{
-    $type        = Setting::get('printer_connection', 'linux_usb');
-    $printerName = Setting::get('printer_name',       'Xprinter');
-    $ip          = Setting::get('printer_ip',         '192.168.1.100');
-    $port        = (int) Setting::get('printer_port', 9100);
+    {
+        $type        = Setting::get('printer_connection', 'linux_usb');
+        $printerName = Setting::get('printer_name',       'Xprinter');
+        $ip          = Setting::get('printer_ip',         '192.168.1.100');
+        $port        = (int) Setting::get('printer_port', 9100);
 
-    return match($type) {
-
-        // Linux USB direct access (works on Debian automatically)
-        'linux_usb' => new \Mike42\Escpos\PrintConnectors\FilePrintConnector(
-            '/dev/usb/lp0'
-        ),
-
-        // Linux using CUPS print system
-        'cups' => new \Mike42\Escpos\PrintConnectors\CupsPrintConnector(
-            $printerName
-        ),
-
-        // Network printer
-        'network' => new \Mike42\Escpos\PrintConnectors\NetworkPrintConnector(
-            $ip, $port
-        ),
-
-        // Windows USB
-        'windows' => new \Mike42\Escpos\PrintConnectors\WindowsPrintConnector(
-            $printerName
-        ),
-
-        default => new \Mike42\Escpos\PrintConnectors\FilePrintConnector(
-            '/dev/usb/lp0'
-        ),
-    };
-}
+        return match($type) {
+            'linux_usb' => new \Mike42\Escpos\PrintConnectors\FilePrintConnector(
+                '/dev/usb/lp1'    // ← lp1 not lp0
+            ),
+            'cups' => new \Mike42\Escpos\PrintConnectors\CupsPrintConnector(
+                $printerName
+            ),
+            'network' => new \Mike42\Escpos\PrintConnectors\NetworkPrintConnector(
+                $ip, $port
+            ),
+            'windows' => new \Mike42\Escpos\PrintConnectors\WindowsPrintConnector(
+                $printerName
+            ),
+            default => new \Mike42\Escpos\PrintConnectors\FilePrintConnector(
+                '/dev/usb/lp1'    // ← lp1 not lp0
+            ),
+        };
+    }
 
     /**
      * Build the receipt content using ESC/POS commands
@@ -114,12 +112,12 @@ class PrintService
 
         // Shop name — large and bold
         $printer->setTextSize(2, 2);
-        $printer->setBold(true);
+        $printer->setEmphasis(true);
         $printer->text(strtoupper($shopName) . "\n");
 
         // Reset size
         $printer->setTextSize(1, 1);
-        $printer->setBold(false);
+        $printer->setEmphasis(false);
 
         if ($shopAddress) {
             $printer->text($shopAddress . "\n");
@@ -141,11 +139,11 @@ class PrintService
         $printer->text(str_repeat('-', $width) . "\n");
 
         // Order number — centered and bold
-        $printer->setBold(true);
+        $printer->setEmphasis(true);
         $printer->setTextSize(1, 2); // tall text
         $printer->text($order->order_number . "\n");
         $printer->setTextSize(1, 1);
-        $printer->setBold(false);
+        $printer->setEmphasis(false);
 
         $printer->text(str_repeat('-', $width) . "\n");
 
@@ -176,11 +174,11 @@ class PrintService
         $printer->text(str_repeat('-', $width) . "\n");
 
         // Column headers
-        $printer->setBold(true);
+        $printer->setEmphasis(true);
         $printer->text(
             $this->itemRow('ITEM', 'QTY', 'TOTAL', $width) . "\n"
         );
-        $printer->setBold(false);
+        $printer->setEmphasis(false);
 
         $printer->text(str_repeat('-', $width) . "\n");
 
@@ -188,7 +186,7 @@ class PrintService
         foreach ($order->items as $item) {
             $name     = strtoupper($item->menuItem->name ?? 'ITEM');
             $quantity = (string) $item->quantity;
-            $total    = '₱' . number_format($item->total_price, 2);
+            $total    = 'PHP' . number_format($item->total_price, 2);
 
             // Item name row
             $printer->text(
@@ -197,7 +195,7 @@ class PrintService
 
             // Unit price below item name
             $printer->text(
-                '  @ ₱' . number_format($item->unit_price, 2) . " each\n"
+                '  @ PHP' . number_format($item->unit_price, 2) . " each\n"
             );
 
             // Customization if any
@@ -213,42 +211,42 @@ class PrintService
         $printer->text(str_repeat('-', $width) . "\n");
 
         $printer->text(
-            $this->twoColumns('Subtotal:', '₱' . number_format($order->subtotal, 2), $width) . "\n"
+            $this->twoColumns('Subtotal:', 'PHP' . number_format($order->subtotal, 2), $width) . "\n"
         );
 
         if ($order->discount_amount > 0) {
             $printer->text(
-                $this->twoColumns('Discount:', '-₱' . number_format($order->discount_amount, 2), $width) . "\n"
+                $this->twoColumns('Discount:', '-PHP' . number_format($order->discount_amount, 2), $width) . "\n"
             );
         }
 
         $printer->text(
-            $this->twoColumns('VAT (12%):', '₱' . number_format($order->tax_amount, 2), $width) . "\n"
+            $this->twoColumns('VAT (12%):', 'PHP' . number_format($order->tax_amount, 2), $width) . "\n"
         );
 
         // Total — bold and large
         $printer->text(str_repeat('=', $width) . "\n");
 
-        $printer->setBold(true);
+        $printer->setEmphasis(true);
         $printer->setTextSize(1, 2);
         $printer->text(
-            $this->twoColumns('TOTAL:', '₱' . number_format($order->total_amount, 2), $width) . "\n"
+            $this->twoColumns('TOTAL:', 'PHP' . number_format($order->total_amount, 2), $width) . "\n"
         );
         $printer->setTextSize(1, 1);
-        $printer->setBold(false);
+        $printer->setEmphasis(false);
 
         $printer->text(str_repeat('=', $width) . "\n");
 
         // Cash and change
         if ($order->amount_tendered) {
             $printer->text(
-                $this->twoColumns('Cash:', '₱' . number_format($order->amount_tendered, 2), $width) . "\n"
+                $this->twoColumns('Cash:', 'PHP' . number_format($order->amount_tendered, 2), $width) . "\n"
             );
-            $printer->setBold(true);
+            $printer->setEmphasis(true);
             $printer->text(
-                $this->twoColumns('Change:', '₱' . number_format($order->change_amount, 2), $width) . "\n"
+                $this->twoColumns('Change:', 'PHP' . number_format($order->change_amount, 2), $width) . "\n"
             );
-            $printer->setBold(false);
+            $printer->setEmphasis(false);
         }
 
         // Payment method
@@ -263,9 +261,9 @@ class PrintService
         $printer->feed(1);
 
         $printer->setJustification(Printer::JUSTIFY_CENTER);
-        $printer->setBold(true);
+        $printer->setEmphasis(true);
         $printer->text(strtoupper($footer) . "\n");
-        $printer->setBold(false);
+        $printer->setEmphasis(false);
         $printer->text("Thank you for your purchase!\n");
         $printer->feed(1);
         $printer->text(
@@ -280,7 +278,7 @@ class PrintService
     /**
      * Helper: create a two-column line
      * Left text and right text with spaces in between
-     * Example: "Total:          ₱150.00"
+     * Example: "Total:          PHP150.00"
      */
     private function twoColumns(string $left, string $right, int $width): string
     {
@@ -291,7 +289,7 @@ class PrintService
 
     /**
      * Helper: create a three-column item row
-     * Example: "CAPPUCCINO         2     ₱240.00"
+     * Example: "CAPPUCCINO         2     PHP240.00"
      */
     private function itemRow(string $name, string $qty, string $total, int $width): string
     {

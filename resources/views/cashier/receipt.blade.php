@@ -370,14 +370,6 @@
 
     </div>
 
-    <script>
-        // Auto-print as soon as the page fully loads
-        window.addEventListener('load', function () {
-            setTimeout(function () {
-                window.print();
-            }, 600); // 600ms delay lets the page render first
-        });
-    </script>
 
 </body>
 </html>
