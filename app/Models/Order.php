@@ -7,20 +7,21 @@ use Illuminate\Database\Eloquent\Model;
 class Order extends Model
 {
     protected $fillable = [
-        'order_number',
-        'cashier_id',
-        'customer_name',
-        'subtotal',
-        'tax_amount',
-        'discount_amount',
-        'total_amount',
-        'payment_method',
-        'amount_tendered',
-        'change_amount',
-        'status',
-        'kitchen_queue_printed',
-        'notes',
-    ];
+    'order_number',
+    'cashier_id',
+    'customer_name',
+    'order_type',       
+    'subtotal',
+    'tax_amount',
+    'discount_amount',
+    'total_amount',
+    'payment_method',
+    'amount_tendered',
+    'change_amount',
+    'status',
+    'kitchen_queue_printed',
+    'notes',
+];
 
     protected $casts = [
         'total_amount'          => 'decimal:2',
