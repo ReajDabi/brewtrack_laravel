@@ -124,8 +124,10 @@ Route::prefix('cashier')
         // Receipt comes after history
         Route::get('/orders/{order}/receipt', [CashierOrderController::class, 'receipt'])
             ->name('orders.receipt');
+            
 
         // Place order
         Route::post('/orders', [CashierOrderController::class, 'store'])
             ->name('orders.store');
     });
+    
