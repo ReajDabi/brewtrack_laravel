@@ -129,5 +129,7 @@ Route::prefix('cashier')
         // Place order
         Route::post('/orders', [CashierOrderController::class, 'store'])
             ->name('orders.store');
+
+        Route::patch('/orders/{order}/status', [App\Http\Controllers\Cashier\OrderController::class, 'updateStatus'])->name('orders.status');
     });
     

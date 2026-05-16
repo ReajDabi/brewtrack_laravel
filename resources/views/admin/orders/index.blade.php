@@ -238,5 +238,37 @@
         {{ $orders->links() }}
     </div>
 </div>
+@push('scripts')
+<script>
+    // How often to check for updates (5000 = 5 seconds)
+    const refreshInterval = 5000; 
 
+    function fetchLatestOrders() {
+        // Keep the current filters in the URL (status, dates, etc.)
+        const currentUrl = window.location.href;
+
+        fetch(currentUrl, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest' // Tells Laravel this is a background request
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            // Create a temporary hidden box to parse the new HTML
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            // 1. Update the Stat Cards
+            document.querySelector('.stats-grid').innerHTML = doc.querySelector('.stats-grid').innerHTML;
+
+            // 2. Update the Orders Table
+            document.querySelector('tbody').innerHTML = doc.querySelector('tbody').innerHTML;
+        })
+        .catch(error => console.error('Error fetching live updates:', error));
+    }
+
+    // Start the silent polling
+    setInterval(fetchLatestOrders, refreshInterval);
+</script>
+@endpush
 @endsection

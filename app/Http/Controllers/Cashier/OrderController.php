@@ -168,4 +168,17 @@ class OrderController extends Controller
         
         return view('cashier.history', compact('orders'));
     }
+    // Update order status from Cashier History
+    public function updateStatus(Request $request, Order $order)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:pending,preparing,ready,served,cancelled',
+        ]);
+
+        $order->update([
+            'status' => $validated['status']
+        ]);
+
+        return back()->with('success', 'Order status updated successfully.');
+    }
 }
