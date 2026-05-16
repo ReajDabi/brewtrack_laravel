@@ -11,7 +11,8 @@
     <meta name="theme-color" content="#6F4E37">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="BrewTrack">
-    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+   <link rel="apple-touch-icon" href="{{ asset('icons/Logo.png') }}">
+<link rel="icon" type="image/png" href="{{ asset('icons/Logo.png') }}">
     <style>
         /* =====================================================
            RESET
