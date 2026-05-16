@@ -243,7 +243,7 @@
                    font-size:13px; font-weight:600;
                    font-family:'Poppins',sans-serif;
                    cursor:pointer; transition:all 0.2s;">
-        🍽 Dine In
+         Dine In
     </button>
     <button type="button"
             id="btnDineOut"
@@ -254,7 +254,7 @@
                    font-size:13px; font-weight:600;
                    font-family:'Poppins',sans-serif;
                    cursor:pointer; transition:all 0.2s;">
-        🥡 Take Out
+         Take Out
     </button>
 </div>
 <input type="hidden" id="orderType" value="dine_in">

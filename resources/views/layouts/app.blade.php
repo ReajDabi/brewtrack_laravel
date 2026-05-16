@@ -63,6 +63,15 @@
         }
         .sidebar-brand > i   { color: #fff; font-size: 18px; }
         .sidebar-brand > span{ color: #fff; font-weight: 700; font-size: 16px; }
+        
+        /* NEW LOGO CSS FOR SIDEBAR */
+        .sidebar-brand img {
+            width: 32px;
+            height: 32px;
+            object-fit: cover;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
 
         .sidebar-close-btn {
             display: none;
@@ -195,6 +204,15 @@
             font-weight: 700;
             font-size: 15px;
             color: #6F4E37;
+        }
+        
+        /* NEW LOGO CSS FOR TOPBAR */
+        .topbar-logo img {
+            width: 28px;
+            height: 28px;
+            object-fit: cover;
+            border-radius: 50%;
+            flex-shrink: 0;
         }
 
         /* Notification bell */
@@ -544,7 +562,7 @@
 <aside class="sidebar" id="sidebar">
 
     <div class="sidebar-brand">
-        <i class="fas fa-coffee"></i>
+        <img src="{{ asset('icons/Logo.png') }}" alt="Logo">
         <span>BrewTrack</span>
         <button class="sidebar-close-btn" onclick="closeSidebar()">
             <i class="fas fa-times"></i>
@@ -698,7 +716,7 @@
             <i class="fas fa-bars"></i>
         </button>
         <div class="topbar-logo">
-            <i class="fas fa-coffee"></i>
+            <img src="{{ asset('icons/Logo.png') }}" alt="Logo">
             BrewTrack
         </div>
 
@@ -894,4 +912,4 @@
 
 @stack('scripts')
 </body>
-</html>
+</html> 
