@@ -177,8 +177,8 @@
 
             /* Set thermal paper size */
             @page {
-                size: 80mm auto;
-                margin: 3mm 2mm;
+                size: 58mm auto;
+                margin: 2mm 1mm;
             }
 
             /* Reset body for printing */
@@ -255,26 +255,32 @@
         </div>
 
         <hr class="divider-dashed">
-
-        {{-- Order details --}}
-        <div class="info-row">
-            <span>Date</span>
-            <span>{{ $order->created_at->format('m/d/Y') }}</span>
-        </div>
-        <div class="info-row">
-            <span>Time</span>
-            <span>{{ $order->created_at->format('h:i A') }}</span>
-        </div>
-        <div class="info-row">
-            <span>Cashier</span>
-            <span>{{ $order->cashier->full_name ?? '—' }}</span>
-        </div>
-        @if($order->customer_name)
-            <div class="info-row">
-                <span>Customer</span>
-                <span>{{ $order->customer_name }}</span>
-            </div>
-        @endif
+{{-- Order details --}}
+<div class="info-row">
+    <span>Date</span>
+    <span>{{ $order->created_at->format('m/d/Y') }}</span>
+</div>
+<div class="info-row">
+    <span>Time</span>
+    <span>{{ $order->created_at->format('h:i A') }}</span>
+</div>
+<div class="info-row">
+    <span>Cashier</span>
+    {{-- Fix: use full_name, fallback to username --}}
+    <span>{{ $order->cashier->full_name ?? $order->cashier->username ?? 'N/A' }}</span>
+</div>
+<div class="info-row">
+    <span>Type</span>
+    <span style="font-weight:bold;">
+        {{ $order->order_type === 'dine_out' ? 'Take Out' : 'Dine In' }}
+    </span>
+</div>
+@if($order->customer_name)
+    <div class="info-row">
+        <span>Customer</span>
+        <span>{{ $order->customer_name }}</span>
+    </div>
+@endif
 
         <hr class="divider-dashed">
 
@@ -370,14 +376,6 @@
 
     </div>
 
-    <script>
-        // Auto-print as soon as the page fully loads
-        window.addEventListener('load', function () {
-            setTimeout(function () {
-                window.print();
-            }, 600); // 600ms delay lets the page render first
-        });
-    </script>
 
 </body>
 </html>

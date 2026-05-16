@@ -4,16 +4,66 @@
 
 @section('content')
 
+{{-- Mobile Responsive Styles specifically for this view --}}
+<style>
+    .reports-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        flex-wrap: wrap; /* Allows wrapping on small screens */
+        gap: 15px;
+    }
+    .reports-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap; /* Allows buttons to wrap */
+    }
+    
+    /* Mobile Breakpoint */
+    @media (max-width: 768px) {
+        .reports-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .page-header {
+            text-align: center;
+            margin-bottom: 10px !important;
+        }
+        .reports-actions {
+            width: 100%;
+        }
+        .reports-actions form, .reports-actions a {
+            flex: 1; /* Makes buttons stretch evenly on mobile */
+            display: flex;
+            justify-content: center;
+        }
+        .reports-actions button {
+            width: 100%;
+        }
+        /* Force grids to stack if global CSS doesn't handle it */
+        .grid-2 {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* Stack stat cards 1 per row */
+            gap: 12px;
+        }
+    }
+</style>
+
 {{-- Header --}}
-<div style="display:flex; align-items:center;
-            justify-content:space-between; margin-bottom:20px;">
+<div class="reports-header">
     <div class="page-header" style="margin-bottom:0;">
         <h1>Reports</h1>
         <p>Generate and view reports</p>
     </div>
 
     {{-- Print buttons --}}
-    <div style="display:flex; gap:10px;">
+    <div class="reports-actions">
 
         {{-- Print Sales Report --}}
         <form method="POST" action="{{ route('admin.reports.print.sales') }}">
@@ -36,10 +86,8 @@
             </button>
         </form>
 
-        {{-- Export CSV (existing button) --}}
-        <a href="{{ route('admin.reports.export',
-                   ['date_from' => $dateFrom, 'date_to' => $dateTo]) }}"
-           class="btn btn-secondary">
+      {{-- Export CSV (existing button) --}}
+        <a href="{{ route('admin.reports.export', ['date_from' => $dateFrom, 'date_to' => $dateTo]) }}" class="btn btn-secondary">
             <i class="fas fa-download"></i> Export CSV
         </a>
     </div>
@@ -112,30 +160,32 @@
                     No sales data for this period
                 </p>
             @else
-                <table>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Item</th>
-                            <th>Qty Sold</th>
-                            <th>Revenue</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($topItems as $i => $item)
+                <div class="table-responsive">
+                    <table>
+                        <thead>
                             <tr>
-                                <td style="color:#9ca3af; font-size:12px;">
-                                    {{ $i + 1 }}
-                                </td>
-                                <td style="font-weight:500;">{{ $item->name }}</td>
-                                <td>{{ $item->total_qty }}</td>
-                                <td style="font-weight:600; color:#6F4E37;">
-                                    &#8369;{{ number_format($item->total_revenue, 2) }}
-                                </td>
+                                <th>#</th>
+                                <th>Item</th>
+                                <th>Qty Sold</th>
+                                <th>Revenue</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach($topItems as $i => $item)
+                                <tr>
+                                    <td style="color:#9ca3af; font-size:12px;">
+                                        {{ $i + 1 }}
+                                    </td>
+                                    <td style="font-weight:500;">{{ $item->name }}</td>
+                                    <td>{{ $item->total_qty }}</td>
+                                    <td style="font-weight:600; color:#6F4E37;">
+                                        &#8369;{{ number_format($item->total_revenue, 2) }}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             @endif
         </div>
 
@@ -151,32 +201,34 @@
                     No payment data for this period
                 </p>
             @else
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Method</th>
-                            <th>Orders</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($byPayment as $payment)
+                <div class="table-responsive">
+                    <table>
+                        <thead>
                             <tr>
-                                <td>
-                                    <span class="badge"
-                                          style="background:#e0f2fe; color:#075985;
-                                                 text-transform:uppercase;">
-                                        {{ $payment->payment_method }}
-                                    </span>
-                                </td>
-                                <td>{{ $payment->orders }}</td>
-                                <td style="font-weight:600;">
-                                    &#8369;{{ number_format($payment->total, 2) }}
-                                </td>
+                                <th>Method</th>
+                                <th>Orders</th>
+                                <th>Total</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach($byPayment as $payment)
+                                <tr>
+                                    <td>
+                                        <span class="badge"
+                                              style="background:#e0f2fe; color:#075985;
+                                                     text-transform:uppercase;">
+                                            {{ $payment->payment_method }}
+                                        </span>
+                                    </td>
+                                    <td>{{ $payment->orders }}</td>
+                                    <td style="font-weight:600;">
+                                        &#8369;{{ number_format($payment->total, 2) }}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             @endif
         </div>
     </div>
@@ -204,44 +256,46 @@
             <canvas id="salesChart" height="80" style="margin-bottom:20px;"></canvas>
 
             {{-- Table --}}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Orders</th>
-                        <th>Sales</th>
-                        <th>Tax</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($salesByDay as $day)
+            <div class="table-responsive">
+                <table>
+                    <thead>
                         <tr>
-                            <td style="font-weight:500;">
-                                {{ \Carbon\Carbon::parse($day->date)->format('M d, Y (D)') }}
+                            <th>Date</th>
+                            <th>Orders</th>
+                            <th>Sales</th>
+                            <th>Tax</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($salesByDay as $day)
+                            <tr>
+                                <td style="font-weight:500;">
+                                    {{ \Carbon\Carbon::parse($day->date)->format('M d, Y (D)') }}
+                                </td>
+                                <td>{{ $day->orders }}</td>
+                                <td style="font-weight:600; color:#6F4E37;">
+                                    &#8369;{{ number_format($day->sales, 2) }}
+                                </td>
+                                <td style="color:#6b7280;">
+                                    &#8369;{{ number_format($day->tax, 2) }}
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr style="background:#f9fafb; font-weight:700;">
+                            <td>TOTAL</td>
+                            <td>{{ $salesByDay->sum('orders') }}</td>
+                            <td style="color:#6F4E37;">
+                                &#8369;{{ number_format($salesByDay->sum('sales'), 2) }}
                             </td>
-                            <td>{{ $day->orders }}</td>
-                            <td style="font-weight:600; color:#6F4E37;">
-                                &#8369;{{ number_format($day->sales, 2) }}
-                            </td>
-                            <td style="color:#6b7280;">
-                                &#8369;{{ number_format($day->tax, 2) }}
+                            <td>
+                                &#8369;{{ number_format($salesByDay->sum('tax'), 2) }}
                             </td>
                         </tr>
-                    @endforeach
-                </tbody>
-                <tfoot>
-                    <tr style="background:#f9fafb; font-weight:700;">
-                        <td>TOTAL</td>
-                        <td>{{ $salesByDay->sum('orders') }}</td>
-                        <td style="color:#6F4E37;">
-                            &#8369;{{ number_format($salesByDay->sum('sales'), 2) }}
-                        </td>
-                        <td>
-                            &#8369;{{ number_format($salesByDay->sum('tax'), 2) }}
-                        </td>
-                    </tr>
-                </tfoot>
-            </table>
+                    </tfoot>
+                </table>
+            </div>
         @endif
     </div>
 
@@ -253,90 +307,83 @@
             <i class="fas fa-boxes"></i> Inventory Status Report
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Code</th>
-                    <th>Item Name</th>
-                    <th>Unit</th>
-                    <th>In Stock</th>
-                    <th>Reorder Level</th>
-                    <th>Critical Level</th>
-                    <th>Unit Cost</th>
-                    <th>Stock Value</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($inventoryItems as $item)
-                    @php
-                        $status     = $item->stock_status;
-                        $stockValue = $item->quantity_in_stock * ($item->unit_cost ?? 0);
-                    @endphp
+        <div class="table-responsive">
+            <table>
+                <thead>
                     <tr>
-                        <td style="color:#9ca3af; font-size:12px;">
-                            {{ $item->item_code ?? '—' }}
-                        </td>
-                        <td style="font-weight:500;">{{ $item->item_name }}</td>
-                        <td>{{ $item->unit_of_measure }}</td>
-                        <td style="font-weight:600;
-                                   color:{{ $status === 'critical' ? '#ef4444' :
-                                           ($status === 'low'      ? '#f59e0b' : '#10b981') }}">
-                            {{ number_format($item->quantity_in_stock, 2) }}
-                        </td>
-                        <td>{{ $item->reorder_level }}</td>
-                        <td>{{ $item->critical_level }}</td>
-                        <td>
-                            @if($item->unit_cost)
-                                &#8369;{{ number_format($item->unit_cost, 2) }}
-                            @else
-                                <span style="color:#9ca3af;">—</span>
-                            @endif
-                        </td>
-                        <td style="font-weight:600;">
-                            @if($item->unit_cost)
-                                &#8369;{{ number_format($stockValue, 2) }}
-                            @else
-                                <span style="color:#9ca3af;">—</span>
-                            @endif
-                        </td>
-                        <td>
-                            @if($status === 'critical')
-                                <span class="badge"
-                                      style="background:#fee2e2; color:#991b1b;">
-                                    Critical
-                                </span>
-                            @elseif($status === 'low')
-                                <span class="badge"
-                                      style="background:#fef3c7; color:#92400e;">
-                                    Low Stock
-                                </span>
-                            @else
-                                <span class="badge"
-                                      style="background:#d1fae5; color:#065f46;">
-                                    In Stock
-                                </span>
-                            @endif
-                        </td>
+                        <th>Code</th>
+                        <th>Item Name</th>
+                        <th>Unit</th>
+                        <th>In Stock</th>
+                        <th>Reorder Level</th>
+                        <th>Critical Level</th>
+                        <th>Unit Cost</th>
+                        <th>Stock Value</th>
+                        <th>Status</th>
                     </tr>
-                @endforeach
-            </tbody>
-            <tfoot>
-                <tr style="background:#f9fafb; font-weight:700;">
-                    <td colspan="7" style="text-align:right; padding-right:16px;">
-                        Total Stock Value:
-                    </td>
-                    <td style="color:#6F4E37;">
-                        &#8369;{{ number_format(
-                            $inventoryItems->sum(fn($i) =>
-                                $i->quantity_in_stock * ($i->unit_cost ?? 0)
-                            ), 2
-                        ) }}
-                    </td>
-                    <td></td>
-                </tr>
-            </tfoot>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach($inventoryItems as $item)
+                        @php
+                            $status = $item->stock_status;
+                            $stockValue = $item->quantity_in_stock * ($item->unit_cost ?? 0);
+                        @endphp
+                        <tr>
+                           <td style="font-weight:500;">{{ $item->item_name }}</td>
+                            <td>{{ $item->unit_of_measure }}</td>
+                            <td style="font-weight:600; color:{{ $status === 'critical' ? '#ef4444' : ($status === 'low' ? '#f59e0b' : '#10b981') }}">
+                                {{ number_format($item->quantity_in_stock, 2) }}
+                            </td>
+                            <td>{{ $item->reorder_level }}</td>
+                            <td>{{ $item->critical_level }}</td>
+                            <td>
+                                @if($item->unit_cost)
+                                    &#8369;{{ number_format($item->unit_cost, 2) }}
+                                @else
+                                    <span style="color:#9ca3af;">—</span>
+                                @endif
+                            </td>
+                            <td style="font-weight:600;">
+                                @if($item->unit_cost)
+                                    &#8369;{{ number_format($stockValue, 2) }}
+                                @else
+                                    <span style="color:#9ca3af;">—</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($status === 'critical')
+                                    <span class="badge"
+                                          style="background:#fee2e2; color:#991b1b;">
+                                        Critical
+                                    </span>
+                                @elseif($status === 'low')
+                                    <span class="badge"
+                                          style="background:#fef3c7; color:#92400e;">
+                                        Low Stock
+                                    </span>
+                                @else
+                                    <span class="badge"
+                                          style="background:#d1fae5; color:#065f46;">
+                                        In Stock
+                                    </span>
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr style="background:#f9fafb; font-weight:700;">
+                        <td colspan="7" style="text-align:right; padding-right:16px;">
+                            Total Stock Value:
+                        </td>
+                        <td style="color:#6F4E37;">
+                            &#8369;{{ number_format($inventoryItems->sum(fn($i) => $i->quantity_in_stock * ($i->unit_cost ?? 0) ), 2) }}
+                        </td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
     </div>
 
 @endif
@@ -398,7 +445,6 @@
         document.getElementById('print_date_to').value = this.value;
     });
 </script>
-
 
 @endif
 @endpush

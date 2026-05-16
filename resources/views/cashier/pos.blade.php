@@ -232,6 +232,32 @@
                 <span>TOTAL</span><span id="grandTotal">&#8369;0.00</span>
             </div>
         </div>
+        {{-- Dine-In / Dine-Out Toggle --}}
+<div style="display:flex; gap:8px; margin-bottom:8px;">
+    <button type="button"
+            id="btnDineIn"
+            onclick="setOrderType('dine_in')"
+            style="flex:1; padding:10px; border-radius:8px;
+                   border:2px solid #6F4E37;
+                   background:#6F4E37; color:white;
+                   font-size:13px; font-weight:600;
+                   font-family:'Poppins',sans-serif;
+                   cursor:pointer; transition:all 0.2s;">
+         Dine In
+    </button>
+    <button type="button"
+            id="btnDineOut"
+            onclick="setOrderType('dine_out')"
+            style="flex:1; padding:10px; border-radius:8px;
+                   border:2px solid #e5e7eb;
+                   background:white; color:#6b7280;
+                   font-size:13px; font-weight:600;
+                   font-family:'Poppins',sans-serif;
+                   cursor:pointer; transition:all 0.2s;">
+         Take Out
+    </button>
+</div>
+<input type="hidden" id="orderType" value="dine_in">
 
         <div class="checkout-form">
             <input type="text" id="customerName" class="pos-input"
@@ -285,6 +311,31 @@ function filterCategory(catId, btn) {
     document.querySelectorAll('.menu-item-card').forEach(function(card) {
         card.style.display = (catId === 'all' || card.dataset.category == catId) ? '' : 'none';
     });
+}
+var currentOrderType = 'dine_in';
+
+function setOrderType(type) {
+    currentOrderType = type;
+    document.getElementById('orderType').value = type;
+
+    var btnIn  = document.getElementById('btnDineIn');
+    var btnOut = document.getElementById('btnDineOut');
+
+    if (type === 'dine_in') {
+        btnIn.style.background   = '#6F4E37';
+        btnIn.style.color        = 'white';
+        btnIn.style.borderColor  = '#6F4E37';
+        btnOut.style.background  = 'white';
+        btnOut.style.color       = '#6b7280';
+        btnOut.style.borderColor = '#e5e7eb';
+    } else {
+        btnOut.style.background  = '#6F4E37';
+        btnOut.style.color       = 'white';
+        btnOut.style.borderColor = '#6F4E37';
+        btnIn.style.background   = 'white';
+        btnIn.style.color        = '#6b7280';
+        btnIn.style.borderColor  = '#e5e7eb';
+    }
 }
 
 function addToCart(id, name, price) {
@@ -435,6 +486,7 @@ async function placeOrder() {
 
     var payload = {
         customer_name:   document.getElementById('customerName').value,
+        order_type:      document.getElementById('orderType').value, 
         payment_method:  document.getElementById('paymentMethod').value,
         amount_tendered: document.getElementById('amountTendered').value || null,
         discount_amount: document.getElementById('discountInput').value  || 0,

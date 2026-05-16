@@ -12,7 +12,7 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Cashier\PosController;
 use App\Http\Controllers\Cashier\OrderController as CashierOrderController;
-
+use App\Http\Controllers\Admin\NotificationController;
 // Root redirect
 Route::get('/', function () {
     if (auth()->check()) {
@@ -25,7 +25,7 @@ Route::get('/', function () {
 
 // Login / Logout
 Route::middleware('guest')->group(function () {
-    Route::get('/login',  [AuthController::class, 'showLogin'])->name('login');
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 });
 
@@ -46,9 +46,9 @@ Route::prefix('admin')
         Route::post('inventory/{inventory}/adjust', [InventoryController::class, 'adjust'])
             ->name('inventory.adjust');
 
-        Route::get('/orders',                  [OrderController::class, 'index'])
+        Route::get('/orders', [OrderController::class, 'index'])
             ->name('orders.index');
-        Route::get('/orders/{order}',          [OrderController::class, 'show'])
+        Route::get('/orders/{order}', [OrderController::class, 'show'])
             ->name('orders.show');
         Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])
             ->name('orders.status');
@@ -63,20 +63,49 @@ Route::prefix('admin')
         Route::patch('users/{user}/toggle', [UserController::class, 'toggleActive'])
             ->name('users.toggle');
 
-        Route::get('/reports',        [ReportController::class, 'index'])
+        Route::get('/reports', [ReportController::class, 'index'])
             ->name('reports.index');
         Route::get('/reports/export', [ReportController::class, 'export'])
             ->name('reports.export');
         // Print reports directly to thermal printer
-         Route::post('/reports/print-sales',     [ReportController::class, 'printSales'])
+        Route::post('/reports/print-sales', [ReportController::class, 'printSales'])
             ->name('reports.print.sales');
         Route::post('/reports/print-inventory', [ReportController::class, 'printInventory'])
-             ->name('reports.print.inventory');
+            ->name('reports.print.inventory');
 
         Route::get('/settings', [SettingsController::class, 'index'])
             ->name('settings.index');
         Route::put('/settings', [SettingsController::class, 'update'])
             ->name('settings.update');
+
+
+        // Notification bell API (called by JS polling)
+        Route::get(
+            '/notifications/unread',
+            [NotificationController::class, 'unread']
+        )
+            ->name('notifications.unread');
+
+        // Full notifications page
+        Route::get(
+            '/notifications',
+            [NotificationController::class, 'index']
+        )
+            ->name('notifications.index');
+
+        // Mark read (called by JS)
+        Route::post(
+            '/notifications/{notification}/read',
+            [NotificationController::class, 'markRead']
+        )
+            ->name('notifications.read');
+
+        // Mark all read
+        Route::post(
+            '/notifications/read-all',
+            [NotificationController::class, 'markAllRead']
+        )
+            ->name('notifications.read-all');
     });
 // Cashier routes
 Route::prefix('cashier')
@@ -95,8 +124,10 @@ Route::prefix('cashier')
         // Receipt comes after history
         Route::get('/orders/{order}/receipt', [CashierOrderController::class, 'receipt'])
             ->name('orders.receipt');
+            
 
         // Place order
         Route::post('/orders', [CashierOrderController::class, 'store'])
             ->name('orders.store');
     });
+    

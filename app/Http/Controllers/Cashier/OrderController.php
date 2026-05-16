@@ -12,13 +12,16 @@ use App\Models\InventoryTransaction;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
+    // Save new POS order.
     public function store(Request $request)
     {
         $validated = $request->validate([
             'customer_name'         => 'nullable|string|max:100',
+            'order_type'            => 'required|in:dine_in,dine_out',
             'payment_method'        => 'required|in:cash,card,gcash,maya',
             'amount_tendered'       => 'nullable|numeric|min:0',
             'discount_amount'       => 'nullable|numeric|min:0',
@@ -31,7 +34,6 @@ class OrderController extends Controller
 
         $taxRate = (float) Setting::get('tax_rate', 0.12);
 
-        // ── SAVE ORDER ──────────────────────────────────────
         DB::transaction(function () use ($validated, $taxRate) {
 
             $subtotal  = 0;
@@ -63,6 +65,7 @@ class OrderController extends Controller
                 'order_number'    => Order::generateOrderNumber(),
                 'cashier_id'      => auth()->id(),
                 'customer_name'   => $validated['customer_name'],
+                'order_type'      => $validated['order_type'],
                 'subtotal'        => $subtotal,
                 'tax_amount'      => $taxAmount,
                 'discount_amount' => $discountAmount,
@@ -79,10 +82,12 @@ class OrderController extends Controller
             }
 
             foreach ($validated['items'] as $cartItem) {
-                $menuItem = MenuItem::with('ingredients')->find($cartItem['menu_item_id']);
+                $menuItem = MenuItem::with('ingredients')
+                    ->find($cartItem['menu_item_id']);
 
                 foreach ($menuItem->ingredients as $ingredient) {
-                    $deductQty = $ingredient->pivot->quantity_needed * $cartItem['quantity'];
+                    $deductQty = $ingredient->pivot->quantity_needed
+                               * $cartItem['quantity'];
                     $inv       = Inventory::find($ingredient->id);
 
                     if ($inv) {
@@ -100,28 +105,34 @@ class OrderController extends Controller
                             'reference_id'     => $order->id,
                             'performed_by'     => auth()->id(),
                         ]);
+
+                        $inv->refresh();
+                        (new \App\Services\StockAlertService())->checkAndAlert($inv);
                     }
                 }
             }
 
             session(['last_order_id' => $order->id]);
         });
-        // ── END SAVE ORDER ───────────────────────────────────
 
+        // ── PRINT BOTH COPIES ────────────────────────────────
         $orderId     = session('last_order_id');
         $printResult = ['success' => false];
 
-        // ── AUTO PRINT ───────────────────────────────────────
         if (Setting::get('auto_print', '1') === '1') {
             try {
                 $printService = new PrintService();
-                $printResult  = $printService->printReceipt(Order::find($orderId));
+                $freshOrder   = Order::find($orderId);
 
-                if (!$printResult['success']) {
-                    \Log::warning('Auto-print failed: ' . ($printResult['message'] ?? 'Unknown'));
-                }
+                // Customer copy
+                $printResult = $printService->printCustomerCopy($freshOrder);
+                usleep(500000); // 0.5 second gap
+
+                // Store copy
+                $printService->printStoreCopy($freshOrder);
+
             } catch (\Exception $e) {
-                \Log::error('PrintService error: ' . $e->getMessage());
+                \Log::error('Print error: ' . $e->getMessage());
                 $printResult = ['success' => false, 'message' => $e->getMessage()];
             }
         }
@@ -129,17 +140,20 @@ class OrderController extends Controller
         return response()->json([
             'success'     => true,
             'receipt_url' => route('cashier.orders.receipt', $orderId),
-            'printed'     => $printResult['success'],
+            'printed'     => $printResult['success'] ?? false,
         ]);
     }
 
+    // Show receipt page.
     public function receipt(Order $order)
     {
         $order->load('items.menuItem', 'cashier');
         $settings = Setting::all()->pluck('setting_value', 'setting_key');
+        
         return view('cashier.receipt', compact('order', 'settings'));
     }
-
+    
+    // Show cashier order history.
     public function history(Request $request)
     {
         $query = Order::where('cashier_id', auth()->id())->with('items');
@@ -151,6 +165,7 @@ class OrderController extends Controller
         }
 
         $orders = $query->latest()->paginate(20)->withQueryString();
+        
         return view('cashier.history', compact('orders'));
     }
 }

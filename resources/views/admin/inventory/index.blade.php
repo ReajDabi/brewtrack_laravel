@@ -4,8 +4,71 @@
 
 @section('content')
 
+{{-- Mobile Responsive Styles specifically for this view --}}
+<style>
+    .inventory-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .stats-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        max-width: 500px;
+        margin-bottom: 20px;
+    }
+    .search-section {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .search-form {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+        max-width: 300px;
+    }
+    .search-form input {
+        flex: 1; /* Makes the search bar stretch to fill space */
+    }
+
+    /* Mobile Breakpoint */
+    @media (max-width: 768px) {
+        .inventory-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .page-header {
+            text-align: center;
+            margin-bottom: 5px !important;
+        }
+        .inventory-header .btn {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+        .stats-container {
+            grid-template-columns: 1fr; /* Stacks the stat cards 1 per row */
+        }
+        .search-section {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .search-form {
+            max-width: 100%; /* Search bar takes full width on mobile */
+        }
+    }
+</style>
+
 {{-- Page header with Add button --}}
-<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+<div class="inventory-header">
     <div class="page-header" style="margin-bottom:0;">
         <h1>Inventory Management</h1>
         <p>Manage stock levels and track inventory</p>
@@ -16,7 +79,7 @@
 </div>
 
 {{-- Stat cards --}}
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:500px; margin-bottom:20px;">
+<div class="stats-container">
     <div class="stat-card">
         <div class="stat-icon icon-brown">
             <i class="fas fa-boxes"></i>
@@ -39,20 +102,19 @@
 
 {{-- Search + Table --}}
 <div class="card">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+    <div class="search-section">
         <div class="card-title" style="margin-bottom:0;">
             <i class="fas fa-list"></i> Inventory Items
         </div>
 
         {{-- Search form --}}
-        <form method="GET" style="display:flex; gap:8px;">
+        <form method="GET" class="search-form">
             <input
                 type="text"
                 name="search"
                 value="{{ request('search') }}"
                 placeholder="Search items..."
                 class="form-control"
-                style="width:200px;"
             >
             <button type="submit" class="btn btn-secondary btn-sm">
                 <i class="fas fa-search"></i>
@@ -65,97 +127,99 @@
         </form>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Item Code</th>
-                <th>Item Name</th>
-                <th>Unit</th>
-                <th>In Stock</th>
-                <th>Reorder Level</th>
-                <th>Unit Cost</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($items as $item)
-                @php
-                    $status = $item->stock_status;
-                @endphp
+    <div class="table-responsive">
+        <table>
+            <thead>
                 <tr>
-                    <td style="color:#9ca3af; font-size:12px;">
-                        {{ $item->item_code ?? '—' }}
-                    </td>
-                    <td style="font-weight:500;">{{ $item->item_name }}</td>
-                    <td>{{ $item->unit_of_measure }}</td>
-                    <td>
-                        <span style="font-weight:600; color:{{ $status === 'critical' ? '#ef4444' : ($status === 'low' ? '#f59e0b' : '#10b981') }}">
-                            {{ number_format($item->quantity_in_stock, 2) }}
-                        </span>
-                    </td>
-                    <td>{{ $item->reorder_level }}</td>
-                    <td>
-                        @if($item->unit_cost)
-                            &#8369;{{ number_format($item->unit_cost, 2) }}
-                        @else
-                            <span style="color:#9ca3af;">—</span>
-                        @endif
-                    </td>
-                    <td>
-                        @if($status === 'critical')
-                            <span class="badge" style="background:#fee2e2; color:#991b1b;">
-                                Critical
+                    <th>Item Code</th>
+                    <th>Item Name</th>
+                    <th>Unit</th>
+                    <th>In Stock</th>
+                    <th>Reorder Level</th>
+                    <th>Unit Cost</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($items as $item)
+                    @php
+                        $status = $item->stock_status;
+                    @endphp
+                    <tr>
+                        <td style="color:#9ca3af; font-size:12px;">
+                            {{ $item->item_code ?? '—' }}
+                        </td>
+                        <td style="font-weight:500;">{{ $item->item_name }}</td>
+                        <td>{{ $item->unit_of_measure }}</td>
+                        <td>
+                            <span style="font-weight:600; color:{{ $status === 'critical' ? '#ef4444' : ($status === 'low' ? '#f59e0b' : '#10b981') }}">
+                                {{ number_format($item->quantity_in_stock, 2) }}
                             </span>
-                        @elseif($status === 'low')
-                            <span class="badge" style="background:#fef3c7; color:#92400e;">
-                                Low Stock
-                            </span>
-                        @else
-                            <span class="badge" style="background:#d1fae5; color:#065f46;">
-                                In Stock
-                            </span>
-                        @endif
-                    </td>
-                    <td>
-                        <div style="display:flex; gap:6px;">
-                            {{-- Adjust stock button --}}
-                            <button
-                                class="btn btn-sm"
-                                style="background:#d1fae5; color:#065f46;"
-                                onclick="openAdjust({{ $item->id }}, '{{ addslashes($item->item_name) }}', {{ $item->quantity_in_stock }})">
-                                <i class="fas fa-balance-scale"></i>
-                            </button>
-
-                            {{-- Edit button --}}
-                            <a href="{{ route('admin.inventory.edit', $item) }}"
-                               class="btn btn-sm btn-edit">
-                                <i class="fas fa-edit"></i>
-                            </a>
-
-                            {{-- Delete button --}}
-                            <form method="POST"
-                                  action="{{ route('admin.inventory.destroy', $item) }}"
-                                  onsubmit="return confirm('Remove this item from inventory?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-delete">
-                                    <i class="fas fa-trash"></i>
+                        </td>
+                        <td>{{ $item->reorder_level }}</td>
+                        <td>
+                            @if($item->unit_cost)
+                                &#8369;{{ number_format($item->unit_cost, 2) }}
+                            @else
+                                <span style="color:#9ca3af;">—</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($status === 'critical')
+                                <span class="badge" style="background:#fee2e2; color:#991b1b;">
+                                    Critical
+                                </span>
+                            @elseif($status === 'low')
+                                <span class="badge" style="background:#fef3c7; color:#92400e;">
+                                    Low Stock
+                                </span>
+                            @else
+                                <span class="badge" style="background:#d1fae5; color:#065f46;">
+                                    In Stock
+                                </span>
+                            @endif
+                        </td>
+                        <td>
+                            <div style="display:flex; gap:6px;">
+                                {{-- Adjust stock button --}}
+                                <button
+                                    class="btn btn-sm"
+                                    style="background:#d1fae5; color:#065f46;"
+                                    onclick="openAdjust({{ $item->id }}, '{{ addslashes($item->item_name) }}', {{ $item->quantity_in_stock }})">
+                                    <i class="fas fa-balance-scale"></i>
                                 </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="8"
-                        style="text-align:center; padding:40px; color:#9ca3af;">
-                        No inventory items found.
-                    </td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
+
+                                {{-- Edit button --}}
+                                <a href="{{ route('admin.inventory.edit', $item) }}"
+                                   class="btn btn-sm btn-edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+
+                                {{-- Delete button --}}
+                                <form method="POST"
+                                      action="{{ route('admin.inventory.destroy', $item) }}"
+                                      onsubmit="return confirm('Remove this item from inventory?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="8"
+                            style="text-align:center; padding:40px; color:#9ca3af;">
+                            No inventory items found.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 
     {{-- Pagination --}}
     <div style="margin-top:16px;">
