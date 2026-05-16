@@ -124,10 +124,24 @@
             }
 
             .logo-circle {
-                width: 60px; height: 60px;
-                font-size: 24px;
-                margin-bottom: 12px;
-            }
+    width: 90px; /* Slightly increased for a better look, adjust as needed */
+    height: 90px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 50%;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    margin-bottom: 20px;
+    overflow: hidden; /* IMPORTANT: This stops the square image corners from poking out */
+}
+
+/* Add this new rule specifically for the image */
+.logo-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* This makes sure the image fills the circle without stretching */
+    object-position: center; /* This guarantees the logo is dead-center */
+}
 
             .login-left h1 { font-size: 24px; }
             
@@ -143,7 +157,7 @@
         <!-- Left panel -->
         <div class="login-left">
             <div class="logo-circle">
-                <i class="fas fa-coffee"></i>
+                <img src="{{ asset('icons/Logo.png') }}" alt="BrewTrack Logo" style="width: 100%; height: 100%;">
             </div>
             <h1>BrewTrack</h1>
             <p class="tagline">Coffee Shop Management System</p>
