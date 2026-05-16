@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Cashier\PosController;
 use App\Http\Controllers\Cashier\OrderController as CashierOrderController;
 use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Middleware\PreventBackHistory;
 // Root redirect
 Route::get('/', function () {
     if (auth()->check()) {
@@ -34,6 +35,7 @@ Route::post('/logout', [AuthController::class, 'logout'])
     ->name('logout');
 
 // Admin routes
+Route::middleware(['auth', PreventBackHistory::class])->group(function () {
 Route::prefix('admin')
     ->name('admin.')
     ->middleware(['auth', 'role:admin'])
@@ -106,6 +108,7 @@ Route::prefix('admin')
             [NotificationController::class, 'markAllRead']
         )
             ->name('notifications.read-all');
+    });
     });
 // Cashier routes
 Route::prefix('cashier')
